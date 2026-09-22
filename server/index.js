@@ -17,7 +17,15 @@ const wishlistRoutes = require("./routes/wishlistRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 
+// =========================================
+// DATABASE
+// =========================================
+
 connectDB();
+
+// =========================================
+// EXPRESS APP
+// =========================================
 
 const app = express();
 
@@ -25,14 +33,27 @@ const app = express();
 const server = http.createServer(app);
 
 // =========================================
-// SOCKET.IO
+// CORS
 // =========================================
 
 app.use(
     cors({
         origin: "https://fashion-store-frontend-zco2.onrender.com",
+        credentials: true,
     })
 );
+
+// =========================================
+// SOCKET.IO
+// =========================================
+
+const io = new Server(server, {
+    cors: {
+        origin: "https://fashion-store-frontend-zco2.onrender.com",
+        methods: ["GET", "POST"],
+        credentials: true,
+    },
+});
 
 io.on("connection", (socket) => {
     console.log("User connected:", socket.id);
@@ -42,16 +63,13 @@ io.on("connection", (socket) => {
     });
 });
 
-// Make Socket.IO available in controllers
-const io = new Server(server, {
-    cors: {
-        origin: "https://fashion-store-frontend-zco2.onrender.com",
-        methods: ["GET", "POST"],
-    },
-});
+// =========================================
+// MIDDLEWARE
+// =========================================
 
 app.use(express.json());
 
+// Serve uploaded images
 app.use("/uploads", express.static("uploads"));
 
 // =========================================
@@ -59,12 +77,19 @@ app.use("/uploads", express.static("uploads"));
 // =========================================
 
 app.use("/api/auth", authRoutes);
+
 app.use("/api/user", userRoutes);
+
 app.use("/api/categories", categoryRoutes);
+
 app.use("/api/products", productRoutes);
+
 app.use("/api/cart", cartRoutes);
+
 app.use("/api/wishlist", wishlistRoutes);
+
 app.use("/api/orders", orderRoutes);
+
 app.use("/api/payments", paymentRoutes);
 
 // =========================================
