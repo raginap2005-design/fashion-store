@@ -14,7 +14,7 @@ function AdminOrders() {
       const token = localStorage.getItem("token");
 
       const response = await axios.get(
-        "http://localhost:5000/api/orders/admin/all",
+        "https://fashion-store-u2cg.onrender.com/api/orders/admin/all",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -46,7 +46,7 @@ function AdminOrders() {
       const token = localStorage.getItem("token");
 
       await axios.put(
-        `http://localhost:5000/api/orders/admin/${orderId}/status`,
+        `https://fashion-store-u2cg.onrender.com/api/orders/admin/${orderId}/status`,
         {
           status,
         },

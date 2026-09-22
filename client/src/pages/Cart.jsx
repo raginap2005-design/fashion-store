@@ -221,7 +221,7 @@ function Cart() {
             {cart.map((item) => {
 
               const imageUrl = item.image
-                ? `http://localhost:5000/${item.image.replaceAll(
+                ? `https://fashion-store-u2cg.onrender.com/${item.image.replaceAll(
                     "\\",
                     "/"
                   )}`

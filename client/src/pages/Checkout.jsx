@@ -57,7 +57,7 @@ function Checkout() {
       // STEP 1: CREATE NORMAL ORDER
 
       const orderResponse = await axios.post(
-        "http://localhost:5000/api/orders",
+        "https://fashion-store-u2cg.onrender.com/api/orders",
         {},
         {
           headers: {
@@ -88,7 +88,7 @@ function Checkout() {
       // STEP 2: CREATE RAZORPAY ORDER
 
       const paymentResponse = await axios.post(
-        "http://localhost:5000/api/payments/create",
+        "https://fashion-store-u2cg.onrender.com/api/payments/create",
         {
           orderId: createdOrder._id,
         },
@@ -167,7 +167,7 @@ function Checkout() {
 
             const verifyResponse =
               await axios.post(
-                "http://localhost:5000/api/payments/verify",
+                "https://fashion-store-u2cg.onrender.com/api/payments/verify",
                 {
                   razorpay_order_id:
                     response.razorpay_order_id,

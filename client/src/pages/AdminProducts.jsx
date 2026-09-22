@@ -23,7 +23,7 @@ function AdminProducts() {
   const fetchProducts = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/products?page=1&limit=100"
+        "https://fashion-store-u2cg.onrender.com/api/products?page=1&limit=100"
       );
 
       setProducts(response.data.products || []);
@@ -96,7 +96,7 @@ function AdminProducts() {
       }
 
       const response = await axios.post(
-        "http://localhost:5000/api/products",
+        "https://fashion-store-u2cg.onrender.com/api/products",
         data,
         {
           headers: {
@@ -159,7 +159,7 @@ function AdminProducts() {
       }
 
       await axios.delete(
-        `http://localhost:5000/api/products/${productId}`,
+        `https://fashion-store-u2cg.onrender.com/api/products/${productId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -190,7 +190,7 @@ function AdminProducts() {
       return null;
     }
 
-    return `http://localhost:5000/${image.replaceAll(
+    return `https://fashion-store-u2cg.onrender.com/${image.replaceAll(
       "\\",
       "/"
     )}`;

@@ -10,7 +10,7 @@ function AdminUsers() {
       const token = localStorage.getItem("token");
 
       const response = await axios.get(
-        "http://localhost:5000/api/user/all",
+        "https://fashion-store-u2cg.onrender.com/api/user/all",
         {
           headers: {
             Authorization: `Bearer ${token}`,

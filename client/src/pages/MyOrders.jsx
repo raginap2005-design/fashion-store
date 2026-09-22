@@ -21,7 +21,7 @@ function MyOrders() {
       }
 
       const response = await axios.get(
-        "http://localhost:5000/api/orders/my-orders",
+        "https://fashion-store-u2cg.onrender.com/api/orders/my-orders",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -66,7 +66,7 @@ function MyOrders() {
       }
 
       const response = await axios.put(
-        `http://localhost:5000/api/orders/${orderId}/cancel`,
+        `https://fashion-store-u2cg.onrender.com/api/orders/${orderId}/cancel`,
         {},
         {
           headers: {
@@ -103,7 +103,7 @@ function MyOrders() {
   useEffect(() => {
     fetchOrders();
 
-    const socket = io("http://localhost:5000");
+    const socket = io("https://fashion-store-u2cg.onrender.com");
 
     socket.on("connect", () => {
       console.log(

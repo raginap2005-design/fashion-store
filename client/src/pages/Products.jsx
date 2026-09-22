@@ -17,7 +17,7 @@ function Products({ category }) {
         setError("");
 
         const response = await axios.get(
-          "http://localhost:5000/api/products?page=1&limit=100"
+          "https://fashion-store-u2cg.onrender.com/api/products?page=1&limit=100"
         );
 
         let productList = response.data.products || [];
@@ -65,7 +65,7 @@ function Products({ category }) {
       }
 
       const response = await axios.post(
-        "http://localhost:5000/api/cart",
+        "https://fashion-store-u2cg.onrender.com/api/cart",
         {
           productId: product._id,
           quantity: 1,
@@ -377,7 +377,7 @@ function Products({ category }) {
             {products.map((product) => {
 
               const imageUrl = product.image
-                ? `http://localhost:5000/${product.image.replaceAll(
+                ? `https://fashion-store-u2cg.onrender.com/${product.image.replaceAll(
                     "\\",
                     "/"
                   )}`

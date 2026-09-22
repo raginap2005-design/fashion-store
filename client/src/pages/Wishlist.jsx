@@ -135,7 +135,7 @@ function Wishlist() {
               {wishlist.map((product) => {
 
                 const imageUrl = product.image
-                  ? `http://localhost:5000/${product.image.replaceAll(
+                  ? `https://fashion-store-u2cg.onrender.com/${product.image.replaceAll(
                       "\\",
                       "/"
                     )}`
