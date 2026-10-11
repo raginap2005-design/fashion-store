@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 
 function Login() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -20,62 +23,38 @@ function Login() {
     try {
       const response = await axios.post(
         "https://fashion-store-u2cg.onrender.com/api/auth/login",
-        {
-          email: formData.email,
-          password: formData.password,
-        }
+        formData
       );
 
-      console.log("LOGIN RESPONSE:", response.data);
-
       if (response.data.token) {
-        // Save token
-        localStorage.setItem(
-          "token",
-          response.data.token
-        );
+        localStorage.setItem("token", response.data.token);
 
-        // Get user role
         const role =
           response.data.user?.role ||
           response.data.role;
 
-        console.log("USER ROLE:", role);
-
-        // Save role
-        localStorage.setItem("role", role);
+        if (role) {
+          localStorage.setItem("role", role);
+        }
 
         alert("Login successful!");
 
-        // Admin → Admin Dashboard
         if (role === "admin") {
-          window.location.href = "/admin";
+          navigate("/admin");
+        } else if (role === "user") {
+          navigate("/dashboard");
+        } else {
+          alert("User role not received from server");
         }
-
-        // User → User Dashboard
-        else if (role === "user") {
-          window.location.href = "/dashboard";
-        }
-
-        // Role not received
-        else {
-          alert(
-            "User role not received from server"
-          );
-        }
-
       } else {
-        alert(
-          "Login successful but token not received"
-        );
+        alert("Token not received");
       }
-
     } catch (error) {
       console.log("LOGIN ERROR:", error);
-
       alert(
         error.response?.data?.message ||
-          "Login failed"
+        error.message ||
+        "Login failed"
       );
     }
   };
@@ -90,29 +69,15 @@ function Login() {
       }}
     >
       <div className="container">
-
         <div className="row justify-content-center">
-
           <div className="col-md-5">
-
             <div
               className="card border-0 shadow"
-              style={{
-                borderRadius: "20px",
-              }}
+              style={{ borderRadius: "20px" }}
             >
-
               <div className="card-body p-5">
-
                 <div className="text-center mb-4">
-
-                  <div
-                    style={{
-                      fontSize: "55px",
-                    }}
-                  >
-                    👗
-                  </div>
+                  <div style={{ fontSize: "55px" }}>👗</div>
 
                   <h2
                     style={{
@@ -126,15 +91,10 @@ function Login() {
                   <p className="text-muted">
                     Login to your StyleHub account
                   </p>
-
                 </div>
 
                 <form onSubmit={handleSubmit}>
-
-                  {/* EMAIL */}
-
                   <div className="mb-3">
-
                     <label className="form-label fw-bold">
                       Email
                     </label>
@@ -148,13 +108,9 @@ function Login() {
                       onChange={handleChange}
                       required
                     />
-
                   </div>
 
-                  {/* PASSWORD */}
-
-                  <div className="mb-4">
-
+                  <div className="mb-2">
                     <label className="form-label fw-bold">
                       Password
                     </label>
@@ -168,10 +124,20 @@ function Login() {
                       onChange={handleChange}
                       required
                     />
-
                   </div>
 
-                  {/* LOGIN BUTTON */}
+                  <div className="text-end mb-4">
+                    <Link
+                      to="/forgot-password"
+                      style={{
+                        color: "#d63384",
+                        textDecoration: "none",
+                        fontWeight: "600",
+                      }}
+                    >
+                      Forgot Password?
+                    </Link>
+                  </div>
 
                   <button
                     type="submit"
@@ -186,17 +152,24 @@ function Login() {
                   >
                     Login
                   </button>
-
                 </form>
 
+                <p className="text-center mt-4 mb-0">
+                  Don't have an account?{" "}
+                  <Link
+                    to="/register"
+                    style={{
+                      color: "#d63384",
+                      fontWeight: "600",
+                    }}
+                  >
+                    Register
+                  </Link>
+                </p>
               </div>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
     </div>
   );

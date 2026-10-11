@@ -1,3 +1,4 @@
+
 import { Link, useNavigate } from "react-router-dom";
 
 function Navbar() {
@@ -43,6 +44,8 @@ function Navbar() {
 
         <div className="d-flex align-items-center gap-2">
 
+          {/* HOME */}
+
           <Link
             to="/"
             className="btn btn-sm"
@@ -53,6 +56,8 @@ function Navbar() {
           >
             🏠 Home
           </Link>
+
+          {/* PRODUCTS */}
 
           <Link
             to="/products"
@@ -65,6 +70,8 @@ function Navbar() {
             👗 Products
           </Link>
 
+          {/* WISHLIST */}
+
           <Link
             to="/wishlist"
             className="btn btn-sm"
@@ -75,6 +82,8 @@ function Navbar() {
           >
             ❤️ Wishlist
           </Link>
+
+          {/* CART */}
 
           <Link
             to="/cart"
@@ -99,6 +108,21 @@ function Navbar() {
               }}
             >
               👤 Dashboard
+            </Link>
+          )}
+
+          {/* MY ORDERS */}
+
+          {token && role === "user" && (
+            <Link
+              to="/my-orders"
+              className="btn btn-sm"
+              style={{
+                color: "white",
+                fontWeight: "600",
+              }}
+            >
+              📦 My Orders
             </Link>
           )}
 

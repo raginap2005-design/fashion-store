@@ -13,7 +13,9 @@ import AdminProducts from "./pages/AdminProducts";
 import AdminOrders from "./pages/AdminOrders";
 import AdminUsers from "./pages/AdminUsers";
 import UserDashboard from "./pages/UserDashboard";
-
+import ForgotPassword from "./pages/ForgotPassword";
+import VerifyOTP from "./pages/VerifyOTP";
+import ResetPassword from "./pages/ResetPassword";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
@@ -547,7 +549,17 @@ function App() {
     </ProtectedRoute>
   }
 />
+
+    <Route
+  path="/forgot-password"
+  element={<ForgotPassword />}
+/>
+
+     <Route path="/verify-otp" element={<VerifyOTP />} />
+     
+      <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
+
     </>
   );
 }
