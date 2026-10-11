@@ -25,13 +25,14 @@ function AdminDashboard() {
           Authorization: `Bearer ${token}`,
         };
 
-        
+      
 const [productsRes, ordersRes, usersRes] =
   await Promise.all([
     axios.get(`${API}/products`, { headers }),
-    axios.get(`${API}/orders/admin/all`, config),
-    axios.get(`${API}/users/all`, config),
+    axios.get(`${API}/orders/admin/all`, { headers }),
+    axios.get(`${API}/users/all`, { headers }),
   ]);
+
 
 
         const products =
