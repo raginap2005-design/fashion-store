@@ -7,17 +7,14 @@ const orderItemSchema = new mongoose.Schema(
             ref: "Product",
             required: true,
         },
-
         name: {
             type: String,
             required: true,
         },
-
         price: {
             type: Number,
             required: true,
         },
-
         quantity: {
             type: Number,
             required: true,
@@ -28,7 +25,6 @@ const orderItemSchema = new mongoose.Schema(
         _id: false,
     }
 );
-
 
 const orderSchema = new mongoose.Schema(
     {
@@ -45,6 +41,18 @@ const orderSchema = new mongoose.Schema(
             required: true,
         },
 
+        paymentMethod: {
+            type: String,
+            enum: ["COD", "Razorpay"],
+            default: "Razorpay",
+        },
+
+        paymentStatus: {
+            type: String,
+            enum: ["Pending", "Paid", "Failed"],
+            default: "Pending",
+        },
+
         status: {
             type: String,
             enum: ["Pending", "Completed", "Cancelled"],
@@ -55,6 +63,5 @@ const orderSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
-
 
 module.exports = mongoose.model("Order", orderSchema);

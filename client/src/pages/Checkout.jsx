@@ -1,306 +1,200 @@
+
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+const API = "https://fashion-store-u2cg.onrender.com/api";
+
 function Checkout() {
   const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("Razorpay");
+  const [razorpayLoaded, setRazorpayLoaded] = useState(
+    Boolean(window.Razorpay)
+  );
 
-  // Load Razorpay Checkout
   useEffect(() => {
-    const loadRazorpay = () => {
-      if (window.Razorpay) {
-        console.log("Razorpay already loaded");
-        return;
-      }
+    if (window.Razorpay) {
+      setRazorpayLoaded(true);
+      return;
+    }
 
-      const script = document.createElement("script");
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
 
-      script.src =
-        "https://checkout.razorpay.com/v1/checkout.js";
-
-      script.onload = () => {
-        console.log("Razorpay loaded successfully");
-      };
-
-      script.onerror = () => {
-        console.log("Razorpay failed to load");
-      };
-
-      document.body.appendChild(script);
+    script.onload = () => setRazorpayLoaded(true);
+    script.onerror = () => {
+      setRazorpayLoaded(false);
+      console.error("Razorpay failed to load");
     };
 
-    loadRazorpay();
+    document.body.appendChild(script);
+
+    return () => {
+      // Keep the script available for other pages.
+    };
   }, []);
 
   const placeOrder = async () => {
-    try {
-      setLoading(true);
+    if (loading) return;
 
-      const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-      if (!token) {
-        alert("Please login first");
-        setLoading(false);
+    if (!token) {
+      alert("Please login first");
+      return;
+    }
+
+    const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+    if (paymentMethod === "Razorpay") {
+      if (!razorpayLoaded || !window.Razorpay) {
+        alert("Razorpay is loading. Please refresh and try again.");
         return;
       }
-
-      if (!window.Razorpay) {
-        alert(
-          "Razorpay is not loaded. Please refresh the page."
-        );
-
-        setLoading(false);
-        return;
-      }
-
-      console.log("Starting checkout...");
-
-      // STEP 1: CREATE NORMAL ORDER
-
-      const orderResponse = await axios.post(
-        "https://fashion-store-u2cg.onrender.com/api/orders",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log(
-        "ORDER RESPONSE:",
-        orderResponse.data
-      );
-
-      const createdOrder =
-        orderResponse.data.order;
-
-      if (!createdOrder) {
-        alert("Order details not received");
-        setLoading(false);
-        return;
-      }
-
-      console.log(
-        "CREATED ORDER:",
-        createdOrder
-      );
-
-      // STEP 2: CREATE RAZORPAY ORDER
-
-      const paymentResponse = await axios.post(
-        "https://fashion-store-u2cg.onrender.com/api/payments/create",
-        {
-          orderId: createdOrder._id,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log(
-        "PAYMENT RESPONSE:",
-        paymentResponse.data
-      );
-
-      const razorpayOrder =
-        paymentResponse.data.razorpayOrder;
-
-      if (!razorpayOrder) {
-        alert(
-          "Razorpay order creation failed"
-        );
-
-        setLoading(false);
-        return;
-      }
-
-      console.log(
-        "RAZORPAY ORDER:",
-        razorpayOrder
-      );
-
-      // STEP 3: RAZORPAY OPTIONS
-
-      const razorpayKey =
-        import.meta.env.VITE_RAZORPAY_KEY_ID;
-
-      console.log(
-        "RAZORPAY KEY:",
-        razorpayKey
-      );
 
       if (!razorpayKey) {
-        alert(
-          "Razorpay Key ID not found. Check client .env file."
-        );
+        alert("Razorpay Key ID missing. Check your client .env file.");
+        return;
+      }
+    }
 
-        setLoading(false);
+    setLoading(true);
+
+    try {
+      // STEP 1: Create order with selected payment method
+      const orderResponse = await axios.post(
+        `${API}/orders`,
+        { paymentMethod },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const createdOrder = orderResponse.data.order;
+
+      if (!createdOrder?._id) {
+        throw new Error("Order details were not received.");
+      }
+
+      // STEP 2: COD - order is placed without Razorpay
+      if (paymentMethod === "COD") {
+        alert("Order placed successfully! Payment method: Cash on Delivery.");
+        window.location.href = "/my-orders";
         return;
       }
 
+      // STEP 3: Create Razorpay payment order
+      const paymentResponse = await axios.post(
+        `${API}/payments/create`,
+        { orderId: createdOrder._id },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const razorpayOrder = paymentResponse.data.razorpayOrder;
+
+      if (!razorpayOrder?.id) {
+        throw new Error("Razorpay order creation failed.");
+      }
+
+      // STEP 4: Open Razorpay checkout
       const options = {
         key: razorpayKey,
-
         amount: razorpayOrder.amount,
-
         currency: razorpayOrder.currency,
-
         name: "StyleHub",
-
-        description:
-          "StyleHub Fashion Store Payment",
-
+        description: "StyleHub Fashion Store Payment",
         order_id: razorpayOrder.id,
 
-        // PAYMENT SUCCESS
-
-        handler: async function (response) {
-          console.log(
-            "RAZORPAY PAYMENT SUCCESS:",
-            response
-          );
-
+        handler: async (response) => {
           try {
-            // STEP 4: VERIFY PAYMENT
-
-            const verifyResponse =
-              await axios.post(
-                "https://fashion-store-u2cg.onrender.com/api/payments/verify",
-                {
-                  razorpay_order_id:
-                    response.razorpay_order_id,
-
-                  razorpay_payment_id:
-                    response.razorpay_payment_id,
-
-                  razorpay_signature:
-                    response.razorpay_signature,
+            // STEP 5: Verify payment on the backend
+            const verifyResponse = await axios.post(
+              `${API}/payments/verify`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              },
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
                 },
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                }
+              }
+            );
+
+            if (
+              verifyResponse.status === 200 &&
+              (
+                verifyResponse.data.order?.paymentStatus === "Paid" ||
+                verifyResponse.data.payment?.status === "Paid"
+              )
+            ) {
+              alert("Payment successful! Your order is confirmed.");
+              window.location.href = "/my-orders";
+            } else {
+              alert(
+                "Payment verification is not confirmed. Please check My Orders before trying again."
               );
-
-            console.log(
-              "VERIFY RESPONSE:",
-              verifyResponse.data
-            );
-
-            alert(
-              "Payment successful! Order completed."
-            );
-
-            window.location.href = "/";
+            }
           } catch (error) {
-            console.log(
-              "PAYMENT VERIFY ERROR:",
-              error
-            );
-
-            console.log(
-              "VERIFY STATUS:",
-              error.response?.status
-            );
-
-            console.log(
-              "VERIFY RESPONSE:",
-              error.response?.data
+            console.error(
+              "PAYMENT VERIFICATION ERROR:",
+              error.response?.data || error.message
             );
 
             alert(
-              error.response?.data?.message ||
-                "Payment verification failed"
+              "Payment verification failed. If money was deducted, please check your order status before paying again."
             );
+          } finally {
+            setLoading(false);
           }
         },
 
-        prefill: {
-          name: "Test User",
-          email: "test@example.com",
-          contact: "9999999999",
-        },
+        prefill: {},
 
-        // PINK STYLE FOR RAZORPAY
         theme: {
           color: "#d63384",
         },
 
         modal: {
-          ondismiss: function () {
-            console.log(
-              "Razorpay popup closed"
-            );
-
+          ondismiss: () => {
             setLoading(false);
+            alert(
+              "Payment window closed. Your cart has not been cleared."
+            );
           },
         },
       };
 
-      console.log(
-        "RAZORPAY OPTIONS:",
-        options
-      );
+      const razorpay = new window.Razorpay(options);
 
-      // STEP 5: CREATE RAZORPAY INSTANCE
+      razorpay.on("payment.failed", (response) => {
+        console.error("PAYMENT FAILED:", response.error);
 
-      const razorpay =
-        new window.Razorpay(options);
+        alert(
+          response.error?.description || "Payment failed. Please try again."
+        );
 
-      console.log(
-        "RAZORPAY INSTANCE CREATED"
-      );
-
-      razorpay.on(
-        "payment.failed",
-        function (response) {
-          console.log(
-            "PAYMENT FAILED:",
-            response.error
-          );
-
-          alert(
-            response.error?.description ||
-              "Payment failed"
-          );
-
-          setLoading(false);
-        }
-      );
-
-      console.log(
-        "ABOUT TO OPEN RAZORPAY"
-      );
+        setLoading(false);
+      });
 
       razorpay.open();
-
-      console.log(
-        "RAZORPAY OPEN CALLED"
-      );
-
-      setLoading(false);
     } catch (error) {
-      console.log(
+      console.error(
         "CHECKOUT ERROR:",
-        error
-      );
-
-      console.log(
-        "STATUS:",
-        error.response?.status
-      );
-
-      console.log(
-        "BACKEND RESPONSE:",
-        error.response?.data
+        error.response?.data || error.message
       );
 
       alert(
         error.response?.data?.message ||
-          "Order/Payment failed"
+          error.message ||
+          "Unable to place your order."
       );
 
       setLoading(false);
@@ -311,213 +205,137 @@ function Checkout() {
     <div
       style={{
         minHeight: "100vh",
-        background:
-          "linear-gradient(135deg, #fff0f6, #ffffff)",
+        background: "linear-gradient(135deg, #fff0f6, #ffffff)",
         paddingTop: "50px",
         paddingBottom: "70px",
       }}
     >
       <div className="container">
-
-        {/* PAGE TITLE */}
-
         <div className="text-center mb-5">
-
           <p
             className="fw-bold mb-1"
-            style={{
-              color: "#d63384",
-              letterSpacing: "2px",
-            }}
+            style={{ color: "#d63384", letterSpacing: "2px" }}
           >
             STYLEHUB
           </p>
 
-          <h1
-            className="fw-bold"
-            style={{ color: "#212529" }}
-          >
-            Secure Checkout 💗
-          </h1>
+          <h1 className="fw-bold">Secure Checkout 💗</h1>
 
           <p className="text-muted">
-            Complete your order and enjoy your
-            shopping experience.
+            Choose your preferred payment method.
           </p>
-
         </div>
 
-
         <div className="row justify-content-center">
-
           <div className="col-lg-8">
-
             <div
               className="card border-0"
               style={{
                 borderRadius: "25px",
                 overflow: "hidden",
-                boxShadow:
-                  "0 15px 45px rgba(214,51,132,0.14)",
+                boxShadow: "0 15px 45px rgba(214,51,132,0.14)",
               }}
             >
-
-              {/* TOP BANNER */}
-
               <div
                 style={{
-                  background:
-                    "linear-gradient(90deg, #d63384, #f06595)",
+                  background: "linear-gradient(90deg, #d63384, #f06595)",
                   color: "white",
                   padding: "30px",
                 }}
               >
+                <h3 className="fw-bold">
+                  Ready to place your order? 🛍️
+                </h3>
 
-                <div className="row align-items-center">
-
-                  <div className="col-md-8">
-
-                    <h3 className="fw-bold">
-                      Ready to place your order? 🛍️
-                    </h3>
-
-                    <p className="mb-0">
-                      Your payment is processed
-                      securely through Razorpay.
-                    </p>
-
-                  </div>
-
-                  <div className="col-md-4 text-md-end mt-3 mt-md-0">
-
-                    <span
-                      style={{
-                        fontSize: "55px",
-                      }}
-                    >
-                      💳 ✨
-                    </span>
-
-                  </div>
-
-                </div>
-
+                <p className="mb-0">
+                  Secure checkout with your preferred payment option.
+                </p>
               </div>
 
-
-              {/* BODY */}
-
               <div className="card-body p-4 p-md-5">
+                <h5 className="fw-bold mb-3">
+                  Select Payment Method
+                </h5>
 
-                <div className="row text-center mb-4">
+                <label
+                  className="d-flex align-items-center p-3 mb-3"
+                  style={{
+                    border: paymentMethod === "Razorpay"
+                      ? "2px solid #d63384"
+                      : "1px solid #dee2e6",
+                    borderRadius: "12px",
+                    cursor: "pointer",
+                    background: paymentMethod === "Razorpay"
+                      ? "#fff5f8"
+                      : "white",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="Razorpay"
+                    checked={paymentMethod === "Razorpay"}
+                    onChange={() => setPaymentMethod("Razorpay")}
+                    className="form-check-input me-3"
+                  />
 
-                  <div className="col-md-4 mb-3 mb-md-0">
-
-                    <div
-                      style={{
-                        fontSize: "32px",
-                      }}
-                    >
-                      🛒
+                  <div>
+                    <strong>💳 Online Payment (Razorpay)</strong>
+                    <div className="text-muted small">
+                      Pay securely online.
                     </div>
-
-                    <h6 className="fw-bold mt-2">
-                      Review Order
-                    </h6>
-
-                    <small className="text-muted">
-                      Check your products
-                    </small>
-
                   </div>
+                </label>
 
+                <label
+                  className="d-flex align-items-center p-3 mb-4"
+                  style={{
+                    border: paymentMethod === "COD"
+                      ? "2px solid #d63384"
+                      : "1px solid #dee2e6",
+                    borderRadius: "12px",
+                    cursor: "pointer",
+                    background: paymentMethod === "COD"
+                      ? "#fff5f8"
+                      : "white",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="COD"
+                    checked={paymentMethod === "COD"}
+                    onChange={() => setPaymentMethod("COD")}
+                    className="form-check-input me-3"
+                  />
 
-                  <div className="col-md-4 mb-3 mb-md-0">
-
-                    <div
-                      style={{
-                        fontSize: "32px",
-                      }}
-                    >
-                      💳
+                  <div>
+                    <strong>💵 Cash on Delivery (COD)</strong>
+                    <div className="text-muted small">
+                      Pay when your order is delivered.
                     </div>
-
-                    <h6 className="fw-bold mt-2">
-                      Secure Payment
-                    </h6>
-
-                    <small className="text-muted">
-                      Powered by Razorpay
-                    </small>
-
                   </div>
-
-
-                  <div className="col-md-4">
-
-                    <div
-                      style={{
-                        fontSize: "32px",
-                      }}
-                    >
-                      🎉
-                    </div>
-
-                    <h6 className="fw-bold mt-2">
-                      Order Complete
-                    </h6>
-
-                    <small className="text-muted">
-                      Enjoy your purchase
-                    </small>
-
-                  </div>
-
-                </div>
-
-
-                <hr />
-
-
-                {/* PAYMENT INFO */}
+                </label>
 
                 <div
-                  className="p-4 mt-4"
+                  className="p-4"
                   style={{
                     background: "#fff5f8",
                     borderRadius: "15px",
                   }}
                 >
+                  <h6 className="fw-bold">
+                    {paymentMethod === "COD"
+                      ? "Cash on Delivery"
+                      : "Secure Online Payment"}
+                  </h6>
 
-                  <h5 className="fw-bold">
-                    Payment Information
-                  </h5>
-
-                  <p className="text-muted mb-2">
-                    You will be redirected to
-                    Razorpay's secure checkout.
+                  <p className="text-muted mb-0">
+                    {paymentMethod === "COD"
+                      ? "Place your order now and pay when it arrives."
+                      : "Your payment will be confirmed after Razorpay verification."}
                   </p>
-
-                  <div className="d-flex align-items-center">
-
-                    <span
-                      style={{
-                        fontSize: "25px",
-                      }}
-                    >
-                      🔒
-                    </span>
-
-                    <span className="ms-2">
-                      Secure & encrypted payment
-                    </span>
-
-                  </div>
-
                 </div>
-
-
-                {/* BUTTON */}
 
                 <button
                   className="btn w-100 mt-4 py-3 fw-bold"
@@ -532,27 +350,22 @@ function Checkout() {
                   }}
                 >
                   {loading
-                    ? "Processing Payment..."
+                    ? "Processing..."
+                    : paymentMethod === "COD"
+                    ? "🛍️ Place COD Order"
                     : "💳 Place Order & Pay"}
                 </button>
-
 
                 <p
                   className="text-center text-muted mt-3 mb-0"
                   style={{ fontSize: "13px" }}
                 >
-                  🔒 Your payment details are
-                  securely handled by Razorpay.
+                  🔒 Your payment details are handled securely.
                 </p>
-
               </div>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
     </div>
   );
