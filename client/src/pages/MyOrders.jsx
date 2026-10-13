@@ -1,7 +1,7 @@
-
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
+import toast from "react-hot-toast";
 
 const API = "https://fashion-store-u2cg.onrender.com/api";
 const SOCKET_URL = "https://fashion-store-u2cg.onrender.com";
@@ -11,6 +11,7 @@ function MyOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cancellingId, setCancellingId] = useState(null);
+  const [orderToCancel, setOrderToCancel] = useState(null);
 
   // =========================================
   // FETCH ORDERS
@@ -21,6 +22,7 @@ function MyOrders() {
 
     if (!token) {
       setError("Please login to view your orders.");
+      setOrders([]);
       setLoading(false);
       return;
     }
@@ -30,14 +32,11 @@ function MyOrders() {
     }
 
     try {
-      const response = await axios.get(
-        `${API}/orders/my-orders`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get(`${API}/orders/my-orders`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       setOrders(response.data.orders || []);
       setError("");
@@ -64,15 +63,10 @@ function MyOrders() {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      alert("Please login first.");
+      toast.error("Please login first.");
+      setOrderToCancel(null);
       return;
     }
-
-    const confirmed = window.confirm(
-      "Are you sure you want to cancel this order?"
-    );
-
-    if (!confirmed) return;
 
     setCancellingId(orderId);
 
@@ -87,9 +81,10 @@ function MyOrders() {
         }
       );
 
-      alert(
-        response.data.message ||
-          "Order cancelled successfully."
+      setOrderToCancel(null);
+
+      toast.success(
+        response.data.message || "Order cancelled successfully."
       );
 
       await fetchOrders(false);
@@ -99,7 +94,7 @@ function MyOrders() {
         err.response?.data || err.message
       );
 
-      alert(
+      toast.error(
         err.response?.data?.message ||
           "Unable to cancel this order."
       );
@@ -166,16 +161,14 @@ function MyOrders() {
 
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
-          <h2 className="fw-bold mb-1">
-            📦 My Orders
-          </h2>
+          <h2 className="fw-bold mb-1">📦 My Orders</h2>
 
           <p className="text-muted mb-0">
             Track your StyleHub purchases.
           </p>
         </div>
 
-        <div className="d-flex gap-2">
+        <div className="d-flex gap-2 flex-wrap">
           <button
             className="btn btn-outline-secondary"
             onClick={() => fetchOrders()}
@@ -210,6 +203,49 @@ function MyOrders() {
         </div>
       )}
 
+      {/* CANCEL CONFIRMATION */}
+
+      {orderToCancel && (
+        <div
+          className="card border-0 shadow-sm mb-4"
+          style={{
+            borderRadius: "16px",
+            borderLeft: "4px solid #dc3545",
+          }}
+        >
+          <div className="card-body p-4">
+            <h5 className="fw-bold text-danger">
+              Cancel this order?
+            </h5>
+
+            <p className="text-muted mb-3">
+              Are you sure you want to cancel order #
+              {orderToCancel.slice(-6).toUpperCase()}?
+            </p>
+
+            <div className="d-flex gap-2 flex-wrap">
+              <button
+                className="btn btn-danger"
+                disabled={cancellingId === orderToCancel}
+                onClick={() => cancelOrder(orderToCancel)}
+              >
+                {cancellingId === orderToCancel
+                  ? "Cancelling..."
+                  : "Yes, Cancel Order"}
+              </button>
+
+              <button
+                className="btn btn-light border"
+                disabled={cancellingId === orderToCancel}
+                onClick={() => setOrderToCancel(null)}
+              >
+                Keep Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* EMPTY STATE */}
 
       {!error && orders.length === 0 && (
@@ -221,13 +257,9 @@ function MyOrders() {
             border: "1px solid #ffd6e7",
           }}
         >
-          <div style={{ fontSize: "55px" }}>
-            🛍️
-          </div>
+          <div style={{ fontSize: "55px" }}>🛍️</div>
 
-          <h4 className="fw-bold mt-3">
-            No orders yet
-          </h4>
+          <h4 className="fw-bold mt-3">No orders yet</h4>
 
           <p className="text-muted">
             Your orders will appear here after you place them.
@@ -309,7 +341,10 @@ function MyOrders() {
                   </small>
 
                   <strong className="fs-5">
-                    ₹{Number(order.totalPrice || 0).toLocaleString("en-IN")}
+                    ₹
+                    {Number(order.totalPrice || 0).toLocaleString(
+                      "en-IN"
+                    )}
                   </strong>
                 </div>
 
@@ -346,9 +381,7 @@ function MyOrders() {
 
               {/* PRODUCTS */}
 
-              <h6 className="fw-bold mb-3">
-                Products
-              </h6>
+              <h6 className="fw-bold mb-3">Products</h6>
 
               <div className="row g-3">
                 {order.items?.map((item, index) => (
@@ -369,7 +402,10 @@ function MyOrders() {
                       </div>
 
                       <div className="small text-muted mt-1">
-                        ₹{Number(item.price || 0).toLocaleString("en-IN")}
+                        ₹
+                        {Number(item.price || 0).toLocaleString(
+                          "en-IN"
+                        )}
                         {" × "}
                         {item.quantity}
                       </div>
@@ -392,8 +428,11 @@ function MyOrders() {
                 <div className="mt-3">
                   <button
                     className="btn btn-outline-danger btn-sm"
-                    onClick={() => cancelOrder(order._id)}
-                    disabled={cancellingId === order._id}
+                    onClick={() => setOrderToCancel(order._id)}
+                    disabled={
+                      cancellingId === order._id ||
+                      orderToCancel === order._id
+                    }
                   >
                     {cancellingId === order._id
                       ? "Cancelling..."

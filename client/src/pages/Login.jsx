@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 function Login() {
   const navigate = useNavigate();
@@ -37,24 +38,25 @@ function Login() {
           localStorage.setItem("role", role);
         }
 
-        alert("Login successful!");
-
         if (role === "admin") {
+          toast.success("Welcome back, Admin! 👑");
           navigate("/admin");
         } else if (role === "user") {
+          toast.success("Login successful! Welcome to StyleHub 💗");
           navigate("/dashboard");
         } else {
-          alert("User role not received from server");
+          toast.error("User role not received from server");
         }
       } else {
-        alert("Token not received");
+        toast.error("Token not received. Please try again.");
       }
     } catch (error) {
       console.log("LOGIN ERROR:", error);
-      alert(
+
+      toast.error(
         error.response?.data?.message ||
         error.message ||
-        "Login failed"
+        "Login failed. Please try again."
       );
     }
   };

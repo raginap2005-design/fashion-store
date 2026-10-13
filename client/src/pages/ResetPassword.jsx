@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 function ResetPassword() {
   const navigate = useNavigate();
@@ -16,12 +17,12 @@ function ResetPassword() {
     e.preventDefault();
 
     if (newPassword.length < 6) {
-      alert("Password must contain at least 6 characters");
+      toast.error("Password must contain at least 6 characters.");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      alert("Passwords do not match");
+      toast.error("Passwords do not match.");
       return;
     }
 
@@ -39,14 +40,21 @@ function ResetPassword() {
         { email, newPassword }
       );
 
-      alert(response.data.message || "Password reset successful!");
+      toast.success(
+        response.data.message || "Password reset successful!"
+      );
 
       navigate("/login");
     } catch (error) {
-      alert(
+      console.error(
+        "RESET PASSWORD ERROR:",
+        error.response?.data || error.message
+      );
+
+      toast.error(
         error.response?.data?.message ||
-        error.message ||
-        "Password reset failed"
+          error.message ||
+          "Password reset failed."
       );
     } finally {
       setLoading(false);
@@ -58,9 +66,11 @@ function ResetPassword() {
       <div className="card border-0 shadow p-4">
         <div className="text-center mb-4">
           <div style={{ fontSize: "45px" }}>🔐</div>
+
           <h2 style={{ color: "#d63384", fontWeight: "800" }}>
             Reset Password
           </h2>
+
           <p className="text-muted">
             Enter your new password below.
           </p>

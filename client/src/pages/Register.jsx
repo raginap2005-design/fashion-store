@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -24,11 +26,19 @@ function Register() {
         formData
       );
 
-      alert(response.data.message);
+      toast.success(
+        response.data.message || "Registration successful! 💗"
+      );
+
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+      });
     } catch (error) {
-      alert(
+      toast.error(
         error.response?.data?.message ||
-          "Registration failed"
+          "Registration failed. Please try again."
       );
     }
   };
@@ -44,25 +54,14 @@ function Register() {
         padding: "50px 15px",
       }}
     >
-
       <div className="container">
-
         <div className="row justify-content-center align-items-center">
-
-          {/* LEFT SIDE */}
-
           <div className="col-lg-5 text-center mb-5 mb-lg-0">
-
-            <div style={{ fontSize: "85px" }}>
-              👗
-            </div>
+            <div style={{ fontSize: "85px" }}>👗</div>
 
             <h1
               className="fw-bold"
-              style={{
-                color: "#212529",
-                fontSize: "45px",
-              }}
+              style={{ color: "#212529", fontSize: "45px" }}
             >
               Welcome to{" "}
               <span style={{ color: "#d63384" }}>
@@ -83,28 +82,19 @@ function Register() {
             </p>
 
             <div className="mt-4">
-
               <span className="badge bg-dark me-2 p-2">
                 ✨ Trendy
               </span>
-
               <span className="badge bg-danger me-2 p-2">
                 ❤️ Stylish
               </span>
-
               <span className="badge bg-warning text-dark p-2">
                 🛍️ Easy Shopping
               </span>
-
             </div>
-
           </div>
 
-
-          {/* REGISTER CARD */}
-
           <div className="col-md-8 col-lg-5">
-
             <div
               className="card border-0"
               style={{
@@ -114,18 +104,9 @@ function Register() {
                 background: "#ffffff",
               }}
             >
-
               <div className="card-body p-4 p-md-5">
-
                 <div className="text-center mb-4">
-
-                  <div
-                    style={{
-                      fontSize: "45px",
-                    }}
-                  >
-                    💗
-                  </div>
+                  <div style={{ fontSize: "45px" }}>💗</div>
 
                   <h2 className="fw-bold">
                     Create Account
@@ -134,20 +115,14 @@ function Register() {
                   <p className="text-muted">
                     Join StyleHub today
                   </p>
-
                 </div>
 
-
                 <form onSubmit={handleSubmit}>
-
-                  {/* NAME */}
-
                   <label className="fw-semibold mb-2">
                     Full Name
                   </label>
 
                   <div className="input-group mb-3">
-
                     <span className="input-group-text bg-white">
                       👤
                     </span>
@@ -161,18 +136,13 @@ function Register() {
                       onChange={handleChange}
                       required
                     />
-
                   </div>
-
-
-                  {/* EMAIL */}
 
                   <label className="fw-semibold mb-2">
                     Email Address
                   </label>
 
                   <div className="input-group mb-3">
-
                     <span className="input-group-text bg-white">
                       📧
                     </span>
@@ -186,18 +156,13 @@ function Register() {
                       onChange={handleChange}
                       required
                     />
-
                   </div>
-
-
-                  {/* PASSWORD */}
 
                   <label className="fw-semibold mb-2">
                     Password
                   </label>
 
                   <div className="input-group mb-4">
-
                     <span className="input-group-text bg-white">
                       🔒
                     </span>
@@ -211,11 +176,7 @@ function Register() {
                       onChange={handleChange}
                       required
                     />
-
                   </div>
-
-
-                  {/* REGISTER */}
 
                   <button
                     type="submit"
@@ -230,38 +191,26 @@ function Register() {
                   >
                     Create Account ✨
                   </button>
-
                 </form>
 
-
                 <div className="text-center mt-4">
-
                   <p className="text-muted mb-0">
                     Already have an account?
                   </p>
 
-                  <a
-                    href="/login"
+                  <Link
+                    to="/login"
                     className="fw-bold text-decoration-none"
-                    style={{
-                      color: "#d63384",
-                    }}
+                    style={{ color: "#d63384" }}
                   >
                     Login here →
-                  </a>
-
+                  </Link>
                 </div>
-
               </div>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
-
     </div>
   );
 }

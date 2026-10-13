@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 function Products({ category }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Search and category filter
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
 
   // =========================================
   // FETCH PRODUCTS
@@ -20,16 +25,7 @@ function Products({ category }) {
           "https://fashion-store-u2cg.onrender.com/api/products?page=1&limit=100"
         );
 
-        let productList = response.data.products || [];
-
-        if (category) {
-          productList = productList.filter(
-            (product) =>
-              product.category?.name?.toLowerCase() ===
-              category.toLowerCase()
-          );
-        }
-
+        const productList = response.data.products || [];
         setProducts(productList);
       } catch (error) {
         console.log("PRODUCT ERROR:", error);
@@ -44,7 +40,61 @@ function Products({ category }) {
     };
 
     fetchProducts();
-  }, [category]);
+  }, []);
+
+  // =========================================
+  // GET CATEGORY NAME
+  // =========================================
+
+  const getCategoryName = (product) => {
+    if (typeof product.category === "string") {
+      return product.category;
+    }
+
+    return product.category?.name || "";
+  };
+
+  // =========================================
+  // CATEGORY OPTIONS
+  // =========================================
+
+  const categories = [
+    ...new Set(
+      products
+        .map((product) => getCategoryName(product))
+        .filter(Boolean)
+    ),
+  ];
+
+  // =========================================
+  // SEARCH + FILTER PRODUCTS
+  // =========================================
+
+  const filteredProducts = products.filter((product) => {
+    const productCategory = getCategoryName(product);
+
+    const search = searchTerm.trim().toLowerCase();
+
+    const matchesSearch =
+      product.name?.toLowerCase().includes(search) ||
+      product.description?.toLowerCase().includes(search);
+
+    const matchesSelectedCategory =
+      !selectedCategory ||
+      productCategory.toLowerCase() ===
+        selectedCategory.toLowerCase();
+
+    const matchesPageCategory =
+      !category ||
+      productCategory.toLowerCase() ===
+        category.toLowerCase();
+
+    return (
+      matchesSearch &&
+      matchesSelectedCategory &&
+      matchesPageCategory
+    );
+  });
 
   // =========================================
   // ADD TO CART
@@ -55,12 +105,12 @@ function Products({ category }) {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        alert("Please login first");
+        toast.error("Please login first.");
         return;
       }
 
       if (product.stock <= 0) {
-        alert("Product is out of stock");
+        toast.error("Product is out of stock.");
         return;
       }
 
@@ -95,18 +145,17 @@ function Products({ category }) {
         });
       }
 
-      localStorage.setItem(
-        "cart",
-        JSON.stringify(localCart)
-      );
+      localStorage.setItem("cart", JSON.stringify(localCart));
 
-      alert(`${product.name} added to cart`);
+      window.dispatchEvent(new Event("cartUpdated"));
+
+      toast.success(`${product.name} added to cart!`);
     } catch (error) {
       console.log("ADD TO CART ERROR:", error);
 
-      alert(
+      toast.error(
         error.response?.data?.message ||
-          "Failed to add product to cart"
+          "Failed to add product to cart."
       );
     }
   };
@@ -118,9 +167,7 @@ function Products({ category }) {
   const toggleWishlist = (product) => {
     try {
       const wishlist =
-        JSON.parse(
-          localStorage.getItem("wishlist")
-        ) || [];
+        JSON.parse(localStorage.getItem("wishlist")) || [];
 
       const existingIndex = wishlist.findIndex(
         (item) => item._id === product._id
@@ -134,8 +181,8 @@ function Products({ category }) {
           JSON.stringify(wishlist)
         );
 
-        alert(
-          `${product.name} removed from wishlist`
+        toast.success(
+          `${product.name} removed from wishlist.`
         );
       } else {
         wishlist.push(product);
@@ -145,14 +192,15 @@ function Products({ category }) {
           JSON.stringify(wishlist)
         );
 
-        alert(
-          `${product.name} added to wishlist`
+        toast.success(
+          `${product.name} added to wishlist!`
         );
       }
 
-      setProducts([...products]);
+      setProducts((previousProducts) => [...previousProducts]);
     } catch (error) {
       console.log("WISHLIST ERROR:", error);
+      toast.error("Unable to update wishlist.");
     }
   };
 
@@ -162,9 +210,7 @@ function Products({ category }) {
 
   const isWishlisted = (productId) => {
     const wishlist =
-      JSON.parse(
-        localStorage.getItem("wishlist")
-      ) || [];
+      JSON.parse(localStorage.getItem("wishlist")) || [];
 
     return wishlist.some(
       (item) => item._id === productId
@@ -208,9 +254,7 @@ function Products({ category }) {
   if (error) {
     return (
       <div className="container mt-5">
-        <div className="alert alert-danger">
-          {error}
-        </div>
+        <div className="alert alert-danger">{error}</div>
       </div>
     );
   }
@@ -223,20 +267,16 @@ function Products({ category }) {
     <div
       style={{
         minHeight: "100vh",
-        background:
-          "linear-gradient(135deg, #fff0f6, #ffffff)",
+        background: "linear-gradient(135deg, #fff0f6, #ffffff)",
         paddingTop: "35px",
         paddingBottom: "60px",
       }}
     >
       <div className="container">
-
         {/* HEADER */}
 
         <div className="mb-4">
-
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-
             <div>
               <p
                 className="mb-1 fw-bold"
@@ -250,9 +290,7 @@ function Products({ category }) {
 
               <h2
                 className="fw-bold mb-1"
-                style={{
-                  color: "#212529",
-                }}
+                style={{ color: "#212529" }}
               >
                 {category
                   ? `${category} Collection`
@@ -260,21 +298,16 @@ function Products({ category }) {
               </h2>
 
               <p className="text-muted mb-0">
-                Find something beautiful for every
-                occasion ✨
+                Find something beautiful for every occasion ✨
               </p>
             </div>
 
             <div>
-
               <button
                 className="btn btn-outline-danger me-2"
-                style={{
-                  borderRadius: "10px",
-                }}
+                style={{ borderRadius: "10px" }}
                 onClick={() => {
-                  window.location.href =
-                    "/wishlist";
+                  window.location.href = "/wishlist";
                 }}
               >
                 ❤️ Wishlist
@@ -282,126 +315,174 @@ function Products({ category }) {
 
               <button
                 className="btn btn-dark"
-                style={{
-                  borderRadius: "10px",
-                }}
+                style={{ borderRadius: "10px" }}
                 onClick={() => {
-                  window.location.href =
-                    "/cart";
+                  window.location.href = "/cart";
                 }}
               >
                 🛒 View Cart
               </button>
-
             </div>
-
           </div>
-
         </div>
-
 
         {/* CATEGORY BANNER */}
 
         <div
           className="p-4 mb-4"
           style={{
-            background:
-              "linear-gradient(90deg, #d63384, #f06595)",
+            background: "linear-gradient(90deg, #d63384, #f06595)",
             borderRadius: "20px",
             color: "white",
           }}
         >
-
           <div className="row align-items-center">
-
             <div className="col-md-8">
-
               <h3 className="fw-bold">
                 Your Style. Your Story. 💕
               </h3>
 
               <p className="mb-0">
-                Explore our latest collection and
-                choose the styles you love.
+                Explore our latest collection and choose the styles you love.
               </p>
-
             </div>
 
             <div className="col-md-4 text-md-end mt-3 mt-md-0">
-
-              <span
-                style={{
-                  fontSize: "55px",
-                }}
-              >
+              <span style={{ fontSize: "55px" }}>
                 👗 ✨ 🛍️
               </span>
-
             </div>
-
           </div>
-
         </div>
 
+        {/* SEARCH AND CATEGORY FILTER */}
 
-        {/* NO PRODUCTS */}
+        <div
+          className="row g-3 mb-4 align-items-center"
+          style={{
+            background: "#ffffff",
+            padding: "20px",
+            borderRadius: "16px",
+            boxShadow: "0 5px 20px rgba(0,0,0,0.06)",
+            marginLeft: "0",
+            marginRight: "0",
+          }}
+        >
+          <div className="col-12 col-md-7">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="🔍 Search products by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search products"
+              style={{
+                height: "48px",
+                borderRadius: "10px",
+              }}
+            />
+          </div>
 
-        {products.length === 0 ? (
+          <div className="col-12 col-md-5">
+            <select
+              className="form-select"
+              value={selectedCategory}
+              onChange={(e) =>
+                setSelectedCategory(e.target.value)
+              }
+              aria-label="Filter by category"
+              style={{
+                height: "48px",
+                borderRadius: "10px",
+              }}
+            >
+              <option value="">All Categories</option>
 
+              {categories.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span className="text-muted small">
+              {filteredProducts.length} products found
+            </span>
+
+            <button
+              type="button"
+              className="btn btn-outline-danger btn-sm"
+              onClick={() => {
+                setSearchTerm("");
+                setSelectedCategory("");
+              }}
+              style={{ borderRadius: "8px" }}
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+
+        {/* PRODUCTS LIST */}
+
+        {filteredProducts.length === 0 ? (
           <div
             className="text-center p-5"
             style={{
               background: "#ffffff",
               borderRadius: "20px",
-              boxShadow:
-                "0 8px 25px rgba(0,0,0,0.07)",
+              boxShadow: "0 8px 25px rgba(0,0,0,0.07)",
             }}
           >
-            <div style={{ fontSize: "60px" }}>
-              🛍️
-            </div>
+            <div style={{ fontSize: "60px" }}>🛍️</div>
 
             <h3 className="fw-bold mt-3">
               No products found
             </h3>
 
             <p className="text-muted">
-              Please check another collection.
+              Try another search term or category.
             </p>
+
+            <button
+              type="button"
+              className="btn btn-outline-danger"
+              onClick={() => {
+                setSearchTerm("");
+                setSelectedCategory("");
+              }}
+              style={{ borderRadius: "10px" }}
+            >
+              Clear Filters
+            </button>
           </div>
-
         ) : (
-
           <div className="row g-4">
-
-            {products.map((product) => {
-
+            {filteredProducts.map((product) => {
               const imageUrl = product.image
-                ? `https://fashion-store-u2cg.onrender.com/${product.image.replaceAll(
-                    "\\",
+                ? `https://fashion-store-u2cg.onrender.com/${product.image.replace(
+                    /\\/g,
                     "/"
-                  )}`
+                  ).replace(/^\/+/, "")}`
                 : null;
 
               return (
-
                 <div
                   className="col-12 col-sm-6 col-lg-3"
                   key={product._id}
                 >
-
                   <div
                     className="card h-100 border-0"
                     style={{
                       borderRadius: "20px",
                       overflow: "hidden",
-                      boxShadow:
-                        "0 8px 25px rgba(0,0,0,0.08)",
+                      boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
                       transition:
                         "transform 0.2s ease, box-shadow 0.2s ease",
                     }}
                   >
-
                     {/* IMAGE AREA */}
 
                     <div
@@ -410,9 +491,7 @@ function Products({ category }) {
                         background: "#ffffff",
                       }}
                     >
-
                       {imageUrl ? (
-
                         <img
                           src={imageUrl}
                           alt={product.name}
@@ -422,13 +501,10 @@ function Products({ category }) {
                             objectFit: "cover",
                           }}
                           onError={(e) => {
-                            e.target.style.display =
-                              "none";
+                            e.target.style.display = "none";
                           }}
                         />
-
                       ) : (
-
                         <div
                           className="d-flex align-items-center justify-content-center"
                           style={{
@@ -438,16 +514,17 @@ function Products({ category }) {
                         >
                           No Image
                         </div>
-
                       )}
-
 
                       {/* WISHLIST */}
 
                       <button
                         type="button"
-                        onClick={() =>
-                          toggleWishlist(product)
+                        onClick={() => toggleWishlist(product)}
+                        aria-label={
+                          isWishlisted(product._id)
+                            ? "Remove from wishlist"
+                            : "Add to wishlist"
                         }
                         style={{
                           position: "absolute",
@@ -462,20 +539,16 @@ function Products({ category }) {
                           alignItems: "center",
                           justifyContent: "center",
                           fontSize: "22px",
-                          boxShadow:
-                            "0 4px 12px rgba(0,0,0,0.15)",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                           cursor: "pointer",
                         }}
                       >
-                        {isWishlisted(product._id)
-                          ? "❤️"
-                          : "🤍"}
+                        {isWishlisted(product._id) ? "❤️" : "🤍"}
                       </button>
 
                       {/* STOCK BADGE */}
 
                       {product.stock <= 0 && (
-
                         <span
                           className="badge bg-danger"
                           style={{
@@ -487,39 +560,29 @@ function Products({ category }) {
                         >
                           OUT OF STOCK
                         </span>
-
                       )}
-
                     </div>
-
 
                     {/* DETAILS */}
 
                     <div className="card-body d-flex flex-column p-4">
-
                       <h5
                         className="fw-bold mb-2"
-                        style={{
-                          color: "#212529",
-                        }}
+                        style={{ color: "#212529" }}
                       >
                         {product.name}
                       </h5>
 
                       <p
                         className="text-muted small mb-2"
-                        style={{
-                          minHeight: "42px",
-                        }}
+                        style={{ minHeight: "42px" }}
                       >
                         {product.description}
                       </p>
 
                       <h4
                         className="fw-bold mb-2"
-                        style={{
-                          color: "#d63384",
-                        }}
+                        style={{ color: "#d63384" }}
                       >
                         ₹{product.price}
                       </h4>
@@ -536,8 +599,7 @@ function Products({ category }) {
                         )}
                       </p>
 
-
-                      {/* CART */}
+                      {/* ADD TO CART */}
 
                       <button
                         className="btn btn-dark w-100 mt-auto fw-semibold"
@@ -545,31 +607,20 @@ function Products({ category }) {
                           borderRadius: "10px",
                           padding: "10px",
                         }}
-                        onClick={() =>
-                          addToCart(product)
-                        }
-                        disabled={
-                          product.stock <= 0
-                        }
+                        onClick={() => addToCart(product)}
+                        disabled={product.stock <= 0}
                       >
                         {product.stock <= 0
                           ? "Out of Stock"
                           : "🛒 Add to Cart"}
                       </button>
-
                     </div>
-
                   </div>
-
                 </div>
-
               );
             })}
-
           </div>
-
         )}
-
       </div>
     </div>
   );

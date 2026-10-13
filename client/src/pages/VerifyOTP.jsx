@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 function VerifyOTP() {
   const navigate = useNavigate();
@@ -20,16 +21,23 @@ function VerifyOTP() {
         { email, otp }
       );
 
-      alert(response.data.message || "OTP verified successfully!");
+      toast.success(
+        response.data.message || "OTP verified successfully!"
+      );
 
       navigate("/reset-password", {
         state: { email, otp },
       });
     } catch (error) {
-      alert(
+      console.error(
+        "OTP VERIFICATION ERROR:",
+        error.response?.data || error.message
+      );
+
+      toast.error(
         error.response?.data?.message ||
-        error.message ||
-        "OTP verification failed"
+          error.message ||
+          "OTP verification failed."
       );
     } finally {
       setLoading(false);
@@ -41,9 +49,11 @@ function VerifyOTP() {
       <div className="card border-0 shadow p-4">
         <div className="text-center mb-4">
           <div style={{ fontSize: "45px" }}>📩</div>
+
           <h2 style={{ color: "#d63384", fontWeight: "800" }}>
             Verify OTP
           </h2>
+
           <p className="text-muted">
             Enter the 6-digit OTP sent to your email.
           </p>

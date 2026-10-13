@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const API = "https://fashion-store-u2cg.onrender.com/api";
 
@@ -22,17 +23,20 @@ function Checkout() {
     script.async = true;
 
     script.onload = () => setRazorpayLoaded(true);
+
     script.onerror = () => {
       setRazorpayLoaded(false);
-      console.error("Razorpay failed to load");
+      toast.error("Unable to load Razorpay. Please refresh and try again.");
     };
 
     document.body.appendChild(script);
-
-    return () => {
-      // Keep the script available for other pages.
-    };
   }, []);
+
+  // Clear the frontend cart after a confirmed successful order/payment.
+  const clearLocalCart = () => {
+    localStorage.removeItem("cart");
+    window.dispatchEvent(new Event("cartUpdated"));
+  };
 
   const placeOrder = async () => {
     if (loading) return;
@@ -40,7 +44,7 @@ function Checkout() {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      alert("Please login first");
+      toast.error("Please login first.");
       return;
     }
 
@@ -48,12 +52,12 @@ function Checkout() {
 
     if (paymentMethod === "Razorpay") {
       if (!razorpayLoaded || !window.Razorpay) {
-        alert("Razorpay is loading. Please refresh and try again.");
+        toast.error("Razorpay is loading. Please try again.");
         return;
       }
 
       if (!razorpayKey) {
-        alert("Razorpay Key ID missing. Check your client .env file.");
+        toast.error("Razorpay Key ID is missing. Check your environment settings.");
         return;
       }
     }
@@ -61,7 +65,7 @@ function Checkout() {
     setLoading(true);
 
     try {
-      // STEP 1: Create order with selected payment method
+      // STEP 1: Create the order
       const orderResponse = await axios.post(
         `${API}/orders`,
         { paymentMethod },
@@ -78,10 +82,18 @@ function Checkout() {
         throw new Error("Order details were not received.");
       }
 
-      // STEP 2: COD - order is placed without Razorpay
+      // STEP 2: Cash on Delivery
       if (paymentMethod === "COD") {
-        alert("Order placed successfully! Payment method: Cash on Delivery.");
-        window.location.href = "/my-orders";
+        // Do not assume the backend cart has been cleared.
+        // This clears the frontend cart only after order creation succeeds.
+        clearLocalCart();
+
+        toast.success("Order placed successfully! Cash on Delivery selected.");
+
+        setTimeout(() => {
+          window.location.href = "/my-orders";
+        }, 800);
+
         return;
       }
 
@@ -128,18 +140,24 @@ function Checkout() {
               }
             );
 
-            if (
+            const verified =
               verifyResponse.status === 200 &&
               (
                 verifyResponse.data.order?.paymentStatus === "Paid" ||
                 verifyResponse.data.payment?.status === "Paid"
-              )
-            ) {
-              alert("Payment successful! Your order is confirmed.");
-              window.location.href = "/my-orders";
+              );
+
+            if (verified) {
+              clearLocalCart();
+
+              toast.success("Payment successful! Your order is confirmed.");
+
+              setTimeout(() => {
+                window.location.href = "/my-orders";
+              }, 1000);
             } else {
-              alert(
-                "Payment verification is not confirmed. Please check My Orders before trying again."
+              toast.error(
+                "Payment is not confirmed. Please check My Orders."
               );
             }
           } catch (error) {
@@ -148,8 +166,8 @@ function Checkout() {
               error.response?.data || error.message
             );
 
-            alert(
-              "Payment verification failed. If money was deducted, please check your order status before paying again."
+            toast.error(
+              "Payment verification failed. If money was deducted, check My Orders before trying again."
             );
           } finally {
             setLoading(false);
@@ -165,9 +183,7 @@ function Checkout() {
         modal: {
           ondismiss: () => {
             setLoading(false);
-            alert(
-              "Payment window closed. Your cart has not been cleared."
-            );
+            toast("Payment window closed. Your cart has not been cleared.");
           },
         },
       };
@@ -177,7 +193,7 @@ function Checkout() {
       razorpay.on("payment.failed", (response) => {
         console.error("PAYMENT FAILED:", response.error);
 
-        alert(
+        toast.error(
           response.error?.description || "Payment failed. Please try again."
         );
 
@@ -191,7 +207,7 @@ function Checkout() {
         error.response?.data || error.message
       );
 
-      alert(
+      toast.error(
         error.response?.data?.message ||
           error.message ||
           "Unable to place your order."
@@ -260,14 +276,14 @@ function Checkout() {
                 <label
                   className="d-flex align-items-center p-3 mb-3"
                   style={{
-                    border: paymentMethod === "Razorpay"
-                      ? "2px solid #d63384"
-                      : "1px solid #dee2e6",
+                    border:
+                      paymentMethod === "Razorpay"
+                        ? "2px solid #d63384"
+                        : "1px solid #dee2e6",
                     borderRadius: "12px",
                     cursor: "pointer",
-                    background: paymentMethod === "Razorpay"
-                      ? "#fff5f8"
-                      : "white",
+                    background:
+                      paymentMethod === "Razorpay" ? "#fff5f8" : "white",
                   }}
                 >
                   <input
@@ -277,6 +293,7 @@ function Checkout() {
                     checked={paymentMethod === "Razorpay"}
                     onChange={() => setPaymentMethod("Razorpay")}
                     className="form-check-input me-3"
+                    disabled={loading}
                   />
 
                   <div>
@@ -290,14 +307,14 @@ function Checkout() {
                 <label
                   className="d-flex align-items-center p-3 mb-4"
                   style={{
-                    border: paymentMethod === "COD"
-                      ? "2px solid #d63384"
-                      : "1px solid #dee2e6",
+                    border:
+                      paymentMethod === "COD"
+                        ? "2px solid #d63384"
+                        : "1px solid #dee2e6",
                     borderRadius: "12px",
                     cursor: "pointer",
-                    background: paymentMethod === "COD"
-                      ? "#fff5f8"
-                      : "white",
+                    background:
+                      paymentMethod === "COD" ? "#fff5f8" : "white",
                   }}
                 >
                   <input
@@ -307,6 +324,7 @@ function Checkout() {
                     checked={paymentMethod === "COD"}
                     onChange={() => setPaymentMethod("COD")}
                     className="form-check-input me-3"
+                    disabled={loading}
                   />
 
                   <div>

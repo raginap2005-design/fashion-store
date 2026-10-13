@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 function UserDashboard() {
   const navigate = useNavigate();
@@ -7,7 +8,7 @@ function UserDashboard() {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
 
-    alert("Logged out successfully");
+    toast.success("Logged out successfully! 💗");
 
     navigate("/login");
   };
@@ -22,11 +23,9 @@ function UserDashboard() {
       }}
     >
       <div className="container">
-
-        {/* ================= HEADER ================= */}
+        {/* HEADER */}
 
         <div className="text-center mb-5">
-
           <div
             style={{
               fontSize: "60px",
@@ -53,45 +52,28 @@ function UserDashboard() {
           >
             Your style. Your story. ✨
           </p>
-
         </div>
 
-        {/* ================= DASHBOARD ================= */}
+        {/* DASHBOARD */}
 
         <div className="row g-4">
-
           {/* SHOP PRODUCTS */}
 
           <div className="col-md-4">
             <div
               className="card border-0 h-100 text-center shadow"
-              style={{
-                borderRadius: "22px",
-              }}
+              style={{ borderRadius: "22px" }}
             >
               <div className="card-body p-4">
-
-                <div
-                  style={{
-                    fontSize: "50px",
-                    marginBottom: "10px",
-                  }}
-                >
+                <div style={{ fontSize: "50px", marginBottom: "10px" }}>
                   🛍️
                 </div>
 
-                <h4
-                  style={{
-                    color: "#d63384",
-                    fontWeight: "700",
-                  }}
-                >
+                <h4 style={{ color: "#d63384", fontWeight: "700" }}>
                   Shop Products
                 </h4>
 
-                <p>
-                  Explore our latest fashion collection.
-                </p>
+                <p>Explore our latest fashion collection.</p>
 
                 <Link
                   to="/products"
@@ -106,7 +88,6 @@ function UserDashboard() {
                 >
                   Start Shopping
                 </Link>
-
               </div>
             </div>
           </div>
@@ -116,33 +97,18 @@ function UserDashboard() {
           <div className="col-md-4">
             <div
               className="card border-0 h-100 text-center shadow"
-              style={{
-                borderRadius: "22px",
-              }}
+              style={{ borderRadius: "22px" }}
             >
               <div className="card-body p-4">
-
-                <div
-                  style={{
-                    fontSize: "50px",
-                    marginBottom: "10px",
-                  }}
-                >
+                <div style={{ fontSize: "50px", marginBottom: "10px" }}>
                   ❤️
                 </div>
 
-                <h4
-                  style={{
-                    color: "#dc3545",
-                    fontWeight: "700",
-                  }}
-                >
+                <h4 style={{ color: "#dc3545", fontWeight: "700" }}>
                   My Wishlist
                 </h4>
 
-                <p>
-                  View the products you love.
-                </p>
+                <p>View the products you love.</p>
 
                 <Link
                   to="/wishlist"
@@ -155,7 +121,6 @@ function UserDashboard() {
                 >
                   View Wishlist
                 </Link>
-
               </div>
             </div>
           </div>
@@ -165,33 +130,18 @@ function UserDashboard() {
           <div className="col-md-4">
             <div
               className="card border-0 h-100 text-center shadow"
-              style={{
-                borderRadius: "22px",
-              }}
+              style={{ borderRadius: "22px" }}
             >
               <div className="card-body p-4">
-
-                <div
-                  style={{
-                    fontSize: "50px",
-                    marginBottom: "10px",
-                  }}
-                >
+                <div style={{ fontSize: "50px", marginBottom: "10px" }}>
                   🛒
                 </div>
 
-                <h4
-                  style={{
-                    color: "#fd7e14",
-                    fontWeight: "700",
-                  }}
-                >
+                <h4 style={{ color: "#fd7e14", fontWeight: "700" }}>
                   My Cart
                 </h4>
 
-                <p>
-                  Check your selected products.
-                </p>
+                <p>Check your selected products.</p>
 
                 <Link
                   to="/cart"
@@ -204,7 +154,6 @@ function UserDashboard() {
                 >
                   View Cart
                 </Link>
-
               </div>
             </div>
           </div>
@@ -214,33 +163,18 @@ function UserDashboard() {
           <div className="col-md-6">
             <div
               className="card border-0 h-100 text-center shadow"
-              style={{
-                borderRadius: "22px",
-              }}
+              style={{ borderRadius: "22px" }}
             >
               <div className="card-body p-4">
-
-                <div
-                  style={{
-                    fontSize: "50px",
-                    marginBottom: "10px",
-                  }}
-                >
+                <div style={{ fontSize: "50px", marginBottom: "10px" }}>
                   📦
                 </div>
 
-                <h4
-                  style={{
-                    color: "#198754",
-                    fontWeight: "700",
-                  }}
-                >
+                <h4 style={{ color: "#198754", fontWeight: "700" }}>
                   My Orders
                 </h4>
 
-                <p>
-                  Track your orders and their status.
-                </p>
+                <p>Track your orders and their status.</p>
 
                 <Link
                   to="/my-orders"
@@ -253,7 +187,6 @@ function UserDashboard() {
                 >
                   View My Orders
                 </Link>
-
               </div>
             </div>
           </div>
@@ -263,33 +196,18 @@ function UserDashboard() {
           <div className="col-md-6">
             <div
               className="card border-0 h-100 text-center shadow"
-              style={{
-                borderRadius: "22px",
-              }}
+              style={{ borderRadius: "22px" }}
             >
               <div className="card-body p-4">
-
-                <div
-                  style={{
-                    fontSize: "50px",
-                    marginBottom: "10px",
-                  }}
-                >
+                <div style={{ fontSize: "50px", marginBottom: "10px" }}>
                   👤
                 </div>
 
-                <h4
-                  style={{
-                    color: "#6f42c1",
-                    fontWeight: "700",
-                  }}
-                >
+                <h4 style={{ color: "#6f42c1", fontWeight: "700" }}>
                   Account
                 </h4>
 
-                <p>
-                  Manage your StyleHub account.
-                </p>
+                <p>Manage your StyleHub account.</p>
 
                 <button
                   className="btn btn-danger w-100"
@@ -302,13 +220,10 @@ function UserDashboard() {
                 >
                   🚪 Logout
                 </button>
-
               </div>
             </div>
           </div>
-
         </div>
-
       </div>
     </div>
   );

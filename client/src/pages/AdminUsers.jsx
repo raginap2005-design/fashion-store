@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -8,6 +9,12 @@ function AdminUsers() {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem("token");
+
+      if (!token) {
+        toast.error("Please login first.");
+        setUsers([]);
+        return;
+      }
 
       const response = await axios.get(
         "https://fashion-store-u2cg.onrender.com/api/user/all",
@@ -22,9 +29,9 @@ function AdminUsers() {
     } catch (error) {
       console.log("USERS ERROR:", error);
 
-      alert(
+      toast.error(
         error.response?.data?.message ||
-          "Failed to load users"
+          "Failed to load users."
       );
     } finally {
       setLoading(false);
@@ -53,7 +60,6 @@ function AdminUsers() {
       }}
     >
       <div className="container">
-
         <div className="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h1
@@ -65,16 +71,14 @@ function AdminUsers() {
               👥 Manage Users
             </h1>
 
-            <p>
-              View registered StyleHub customers
-            </p>
+            <p>View registered StyleHub customers</p>
           </div>
 
           <button
             className="btn btn-dark"
-            onClick={() =>
-              (window.location.href = "/admin")
-            }
+            onClick={() => {
+              window.location.href = "/admin";
+            }}
           >
             ← Dashboard
           </button>
@@ -86,7 +90,6 @@ function AdminUsers() {
           </div>
         ) : (
           <div className="row g-4">
-
             {users.map((user) => (
               <div
                 className="col-md-6 col-lg-4"
@@ -99,12 +102,7 @@ function AdminUsers() {
                   }}
                 >
                   <div className="card-body p-4">
-
-                    <div
-                      style={{
-                        fontSize: "45px",
-                      }}
-                    >
+                    <div style={{ fontSize: "45px" }}>
                       👤
                     </div>
 
@@ -130,15 +128,12 @@ function AdminUsers() {
                     >
                       {user.role}
                     </span>
-
                   </div>
                 </div>
               </div>
             ))}
-
           </div>
         )}
-
       </div>
     </div>
   );

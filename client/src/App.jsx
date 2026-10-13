@@ -22,6 +22,8 @@ import Navbar from "./components/Navbar";
 
 import socket from "./socket";
 
+import { Toaster } from "react-hot-toast";
+
 // =========================================
 // HOME PAGE
 // =========================================
@@ -559,7 +561,19 @@ function App() {
      
       <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
+     
 
+      <Toaster
+  position="top-right"
+  toastOptions={{
+    duration: 3000,
+    style: {
+      borderRadius: "12px",
+      padding: "14px",
+      fontSize: "14px",
+    },
+  }}
+/>   
     </>
   );
 }

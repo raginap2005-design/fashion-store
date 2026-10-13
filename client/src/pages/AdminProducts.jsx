@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 function AdminProducts() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -15,80 +17,108 @@ function AdminProducts() {
 
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [productToDelete, setProductToDelete] = useState(null);
 
-  // =========================================
+  const API_URL = "https://fashion-store-u2cg.onrender.com/api";
+
   // FETCH PRODUCTS
-  // =========================================
-
   const fetchProducts = async () => {
     try {
       const response = await axios.get(
-        "https://fashion-store-u2cg.onrender.com/api/products?page=1&limit=100"
+        `${API_URL}/products?page=1&limit=100`
       );
 
       setProducts(response.data.products || []);
     } catch (error) {
       console.log("FETCH PRODUCTS ERROR:", error);
-      alert("Failed to load products");
+      toast.error(
+        error.response?.data?.message || "Failed to load products"
+      );
     }
   };
 
-  // =========================================
-  // LOAD PRODUCTS
-  // =========================================
+  // FETCH CATEGORIES
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/categories`);
+
+      // Supports either an array response or { categories: [...] }
+      const categoryList = Array.isArray(response.data)
+        ? response.data
+        : response.data.categories || [];
+
+      setCategories(categoryList);
+
+      if (categoryList.length === 0) {
+        toast.error("No categories found. Please check your categories.");
+      }
+    } catch (error) {
+      console.log("FETCH CATEGORIES ERROR:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to load categories"
+      );
+    }
+  };
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
   }, []);
 
-  // =========================================
-  // HANDLE INPUT
-  // =========================================
-
+  // HANDLE TEXT INPUTS
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData({
-      ...formData,
+    setFormData((previous) => ({
+      ...previous,
       [name]: value,
-    });
+    }));
   };
 
-  // =========================================
   // HANDLE IMAGE
-  // =========================================
-
   const handleImageChange = (e) => {
-    setFormData({
-      ...formData,
-      image: e.target.files[0],
-    });
+    const image = e.target.files?.[0] || null;
+
+    if (image && !image.type.startsWith("image/")) {
+      toast.error("Please select a valid image");
+      e.target.value = "";
+      return;
+    }
+
+    setFormData((previous) => ({
+      ...previous,
+      image,
+    }));
   };
 
-  // =========================================
   // ADD PRODUCT
-  // =========================================
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      toast.error("Please login first");
+      return;
+    }
+
+    if (!formData.category) {
+      toast.error("Please select a category");
+      return;
+    }
 
     try {
       setLoading(true);
 
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        alert("Please login first");
-        setLoading(false);
-        return;
-      }
-
       const data = new FormData();
 
-      data.append("name", formData.name);
-      data.append("description", formData.description);
+      data.append("name", formData.name.trim());
+      data.append("description", formData.description.trim());
       data.append("price", formData.price);
       data.append("stock", formData.stock);
+
+      // Send MongoDB category ID, NOT its name
       data.append("category", formData.category);
 
       if (formData.image) {
@@ -96,7 +126,7 @@ function AdminProducts() {
       }
 
       const response = await axios.post(
-        "https://fashion-store-u2cg.onrender.com/api/products",
+        `${API_URL}/products`,
         data,
         {
           headers: {
@@ -107,9 +137,8 @@ function AdminProducts() {
 
       console.log("ADD PRODUCT RESPONSE:", response.data);
 
-      alert("Product added successfully! 🎉");
+      toast.success("Product added successfully! 🎉");
 
-      // Clear form
       setFormData({
         name: "",
         description: "",
@@ -119,86 +148,68 @@ function AdminProducts() {
         image: null,
       });
 
-      // Close form
+      const imageInput = document.getElementById("admin-product-image");
+      if (imageInput) imageInput.value = "";
+
       setShowForm(false);
-
-      // Refresh products
-      fetchProducts();
-
+      await fetchProducts();
     } catch (error) {
-      console.log("ADD PRODUCT ERROR:", error);
+      console.log("ADD PRODUCT ERROR:", error.response?.data || error);
 
-      alert(
-        error.response?.data?.message ||
-          "Failed to add product"
+      toast.error(
+        error.response?.data?.message || "Failed to add product"
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // =========================================
   // DELETE PRODUCT
-  // =========================================
-
   const deleteProduct = async (productId) => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      toast.error("Please login first");
+      setProductToDelete(null);
+      return;
+    }
+
     try {
-      const confirmDelete = window.confirm(
-        "Are you sure you want to delete this product?"
+      setDeletingId(productId);
+
+      await axios.delete(`${API_URL}/products/${productId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setProducts((previous) =>
+        previous.filter((product) => product._id !== productId)
       );
 
-      if (!confirmDelete) {
-        return;
-      }
-
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        alert("Please login first");
-        return;
-      }
-
-      await axios.delete(
-        `https://fashion-store-u2cg.onrender.com/api/products/${productId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      alert("Product deleted successfully");
-
-      fetchProducts();
-
+      setProductToDelete(null);
+      toast.success("Product deleted successfully 🗑️");
     } catch (error) {
       console.log("DELETE PRODUCT ERROR:", error);
 
-      alert(
-        error.response?.data?.message ||
-          "Failed to delete product"
+      toast.error(
+        error.response?.data?.message || "Failed to delete product"
       );
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  // =========================================
   // IMAGE URL
-  // =========================================
-
   const getImageUrl = (image) => {
-    if (!image) {
-      return null;
+    if (!image) return null;
+
+    if (image.startsWith("http://") || image.startsWith("https://")) {
+      return image;
     }
 
-    return `https://fashion-store-u2cg.onrender.com/${image.replaceAll(
-      "\\",
-      "/"
-    )}`;
+    return `${API_URL.replace("/api", "")}/${image.replace(/\\/g, "/")}`;
   };
-
-  // =========================================
-  // PAGE
-  // =========================================
 
   return (
     <div
@@ -208,61 +219,38 @@ function AdminProducts() {
         minHeight: "100vh",
       }}
     >
-
-      {/* =====================================
-          HEADER
-      ===================================== */}
-
       <div className="container">
-
-        <div className="d-flex justify-content-between align-items-center mb-4">
-
+        {/* HEADER */}
+        <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
           <div>
-            <h1
-              className="fw-bold"
-              style={{ color: "#d63384" }}
-            >
+            <h1 className="fw-bold" style={{ color: "#d63384" }}>
               Admin Products
             </h1>
-
             <p className="text-secondary mb-0">
               Manage your StyleHub products
             </p>
           </div>
 
           <button
+            type="button"
             className="btn btn-lg text-white"
             style={{
               backgroundColor: "#d63384",
               borderRadius: "12px",
             }}
-            onClick={() =>
-              setShowForm(!showForm)
-            }
+            onClick={() => setShowForm((previous) => !previous)}
           >
-            {showForm
-              ? "✕ Close"
-              : "＋ Add Product"}
+            {showForm ? "✕ Close" : "＋ Add Product"}
           </button>
-
         </div>
 
-
-        {/* =====================================
-            ADD PRODUCT FORM
-        ===================================== */}
-
+        {/* ADD PRODUCT FORM */}
         {showForm && (
-
           <div
             className="card border-0 shadow-lg mb-5"
-            style={{
-              borderRadius: "20px",
-            }}
+            style={{ borderRadius: "20px" }}
           >
-
             <div className="card-body p-4">
-
               <h3
                 className="fw-bold mb-4"
                 style={{ color: "#d63384" }}
@@ -271,17 +259,11 @@ function AdminProducts() {
               </h3>
 
               <form onSubmit={handleSubmit}>
-
                 <div className="row">
-
-                  {/* PRODUCT NAME */}
-
                   <div className="col-md-6 mb-3">
-
                     <label className="fw-bold mb-2">
                       Product Name
                     </label>
-
                     <input
                       type="text"
                       name="name"
@@ -291,18 +273,10 @@ function AdminProducts() {
                       onChange={handleChange}
                       required
                     />
-
                   </div>
 
-
-                  {/* PRICE */}
-
                   <div className="col-md-3 mb-3">
-
-                    <label className="fw-bold mb-2">
-                      Price
-                    </label>
-
+                    <label className="fw-bold mb-2">Price</label>
                     <input
                       type="number"
                       name="price"
@@ -311,20 +285,13 @@ function AdminProducts() {
                       value={formData.price}
                       onChange={handleChange}
                       min="0"
+                      step="0.01"
                       required
                     />
-
                   </div>
 
-
-                  {/* STOCK */}
-
                   <div className="col-md-3 mb-3">
-
-                    <label className="fw-bold mb-2">
-                      Stock
-                    </label>
-
+                    <label className="fw-bold mb-2">Stock</label>
                     <input
                       type="number"
                       name="stock"
@@ -333,60 +300,65 @@ function AdminProducts() {
                       value={formData.stock}
                       onChange={handleChange}
                       min="0"
+                      step="1"
                       required
                     />
-
                   </div>
 
-
-                  {/* CATEGORY */}
-
+                  {/* CATEGORY DROPDOWN */}
                   <div className="col-md-6 mb-3">
-
                     <label className="fw-bold mb-2">
                       Category
                     </label>
 
-                    <input
-                      type="text"
+                    <select
                       name="category"
-                      className="form-control"
-                      placeholder="Enter category"
+                      className="form-select"
                       value={formData.category}
                       onChange={handleChange}
                       required
-                    />
+                    >
+                      <option value="">
+                        {categories.length > 0
+                          ? "Select Category"
+                          : "Loading categories..."}
+                      </option>
 
+                      {categories.map((category) => (
+                        <option
+                          key={category._id}
+                          value={category._id}
+                        >
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+
+                    {categories.length === 0 && (
+                      <small className="text-danger">
+                        No categories loaded. Check the categories API.
+                      </small>
+                    )}
                   </div>
 
-
-                  {/* IMAGE */}
-
                   <div className="col-md-6 mb-3">
-
                     <label className="fw-bold mb-2">
                       Product Image 📷
                     </label>
-
                     <input
+                      id="admin-product-image"
                       type="file"
                       name="image"
                       className="form-control"
                       accept="image/*"
                       onChange={handleImageChange}
                     />
-
                   </div>
 
-
-                  {/* DESCRIPTION */}
-
                   <div className="col-12 mb-4">
-
                     <label className="fw-bold mb-2">
                       Description
                     </label>
-
                     <textarea
                       name="description"
                       className="form-control"
@@ -396,13 +368,8 @@ function AdminProducts() {
                       onChange={handleChange}
                       required
                     />
-
                   </div>
-
                 </div>
-
-
-                {/* SUBMIT */}
 
                 <button
                   type="submit"
@@ -411,52 +378,73 @@ function AdminProducts() {
                     backgroundColor: "#d63384",
                     borderRadius: "10px",
                   }}
-                  disabled={loading}
+                  disabled={loading || categories.length === 0}
                 >
-                  {loading
-                    ? "Adding Product..."
-                    : "Add Product"}
+                  {loading ? "Adding Product..." : "Add Product"}
                 </button>
-
               </form>
-
             </div>
-
           </div>
-
         )}
 
+        {/* DELETE CONFIRMATION */}
+        {productToDelete && (
+          <div
+            className="card border-0 shadow mb-4"
+            style={{ borderRadius: "16px" }}
+          >
+            <div className="card-body p-4">
+              <h5 className="fw-bold text-danger">
+                Delete Product?
+              </h5>
 
-        {/* =====================================
-            PRODUCT LIST
-        ===================================== */}
+              <p className="text-secondary mb-3">
+                Are you sure you want to delete{" "}
+                <strong>{productToDelete.name}</strong>?
+              </p>
 
+              <div className="d-flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  disabled={deletingId === productToDelete._id}
+                  onClick={() => deleteProduct(productToDelete._id)}
+                >
+                  {deletingId === productToDelete._id
+                    ? "Deleting..."
+                    : "Yes, Delete"}
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-light border"
+                  disabled={deletingId === productToDelete._id}
+                  onClick={() => setProductToDelete(null)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PRODUCT LIST */}
         <div className="row">
-
           {products.length === 0 ? (
-
             <div className="col-12">
-
               <div className="alert alert-info text-center">
                 No products found.
               </div>
-
             </div>
-
           ) : (
-
             products.map((product) => {
-
-              const imageUrl =
-                getImageUrl(product.image);
+              const imageUrl = getImageUrl(product.image);
 
               return (
-
                 <div
                   className="col-md-4 col-lg-3 mb-4"
                   key={product._id}
                 >
-
                   <div
                     className="card h-100 border-0 shadow-sm"
                     style={{
@@ -464,11 +452,7 @@ function AdminProducts() {
                       overflow: "hidden",
                     }}
                   >
-
-                    {/* IMAGE */}
-
                     {imageUrl ? (
-
                       <img
                         src={imageUrl}
                         alt={product.name}
@@ -477,10 +461,11 @@ function AdminProducts() {
                           width: "100%",
                           objectFit: "cover",
                         }}
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                        }}
                       />
-
                     ) : (
-
                       <div
                         className="d-flex justify-content-center align-items-center"
                         style={{
@@ -490,17 +475,10 @@ function AdminProducts() {
                       >
                         No Image
                       </div>
-
                     )}
 
-
-                    {/* DETAILS */}
-
                     <div className="card-body">
-
-                      <h5 className="fw-bold">
-                        {product.name}
-                      </h5>
+                      <h5 className="fw-bold">{product.name}</h5>
 
                       <p className="text-secondary small">
                         {product.description}
@@ -508,49 +486,36 @@ function AdminProducts() {
 
                       <h5
                         className="fw-bold"
-                        style={{
-                          color: "#d63384",
-                        }}
+                        style={{ color: "#d63384" }}
                       >
                         ₹{product.price}
                       </h5>
 
                       <p className="mb-3">
-                        <strong>
-                          Stock:
-                        </strong>{" "}
-                        {product.stock}
+                        <strong>Stock:</strong> {product.stock}
                       </p>
 
-
-                      {/* DELETE */}
+                      <p className="small text-secondary">
+                        <strong>Category:</strong>{" "}
+                        {product.category?.name || "Uncategorized"}
+                      </p>
 
                       <button
+                        type="button"
                         className="btn btn-outline-danger w-100"
-                        onClick={() =>
-                          deleteProduct(
-                            product._id
-                          )
-                        }
+                        disabled={deletingId === product._id}
+                        onClick={() => setProductToDelete(product)}
                       >
                         🗑️ Delete
                       </button>
-
                     </div>
-
                   </div>
-
                 </div>
-
               );
             })
-
           )}
-
         </div>
-
       </div>
-
     </div>
   );
 }

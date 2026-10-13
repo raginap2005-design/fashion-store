@@ -1,7 +1,7 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 function ForgotPassword() {
   const navigate = useNavigate();
@@ -18,16 +18,23 @@ function ForgotPassword() {
         { email }
       );
 
-      alert(response.data.message || "OTP sent successfully!");
+      toast.success(
+        response.data.message || "OTP sent successfully!"
+      );
 
       navigate("/verify-otp", {
         state: { email },
       });
     } catch (error) {
-      alert(
+      console.error(
+        "FORGOT PASSWORD ERROR:",
+        error.response?.data || error.message
+      );
+
+      toast.error(
         error.response?.data?.message ||
-        error.message ||
-        "Failed to send OTP"
+          error.message ||
+          "Failed to send OTP."
       );
     } finally {
       setLoading(false);
@@ -42,9 +49,11 @@ function ForgotPassword() {
       <div className="card border-0 shadow p-4">
         <div className="text-center mb-4">
           <div style={{ fontSize: "45px" }}>🔐</div>
+
           <h2 style={{ color: "#d63384", fontWeight: "800" }}>
             Forgot Password?
           </h2>
+
           <p className="text-muted">
             Enter your registered email to receive an OTP.
           </p>
