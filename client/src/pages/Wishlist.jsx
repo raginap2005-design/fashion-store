@@ -41,7 +41,8 @@ function Wishlist() {
         paddingBottom: "60px",
       }}
     >
-      <div className="container">
+      {/* <div className="container"> */}
+      <div className="container-fluid px-4 px-md-5">
 
         {/* HEADER */}
 

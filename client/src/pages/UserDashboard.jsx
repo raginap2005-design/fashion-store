@@ -22,7 +22,9 @@ function UserDashboard() {
         padding: "50px 20px",
       }}
     >
-      <div className="container">
+      {/* <div className="container"> */}
+      
+      <div className="container-fluid px-4 px-md-5">
         {/* HEADER */}
 
         <div className="text-center mb-5">

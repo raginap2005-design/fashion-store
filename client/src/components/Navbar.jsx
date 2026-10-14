@@ -26,7 +26,9 @@ function Navbar() {
         padding: "12px 0",
       }}
     >
-      <div className="container">
+      {/* <div className="container"> */}
+
+      <div className="container-fluid px-4 px-md-5 d-flex align-items-center">
 
         {/* LOGO */}
 
@@ -43,7 +45,9 @@ function Navbar() {
 
         {/* MENU */}
 
-        <div className="d-flex align-items-center gap-2">
+        {/* <div className="d-flex align-items-center gap-2"> */}
+
+        <div className="d-flex align-items-center gap-2 ms-auto flex-wrap justify-content-end">
 
           {/* HOME */}
 

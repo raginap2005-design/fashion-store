@@ -219,7 +219,8 @@ function AdminProducts() {
         minHeight: "100vh",
       }}
     >
-      <div className="container">
+      {/* <div className="container"> */}
+      <div className="container-fluid px-4 px-md-5">
         {/* HEADER */}
         <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
           <div>

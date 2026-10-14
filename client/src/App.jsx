@@ -46,7 +46,8 @@ function Home() {
           boxShadow: "0 3px 15px rgba(0,0,0,0.08)",
         }}
       >
-        <div className="container">
+        {/* <div className="container"> */}
+        <div className="container-fluid px-4 px-md-5">
           <Link
             to="/"
             className="navbar-brand fw-bold"
@@ -85,7 +86,8 @@ function Home() {
 
       {/* HERO SECTION */}
 
-      <div className="container">
+      {/* <div className="container"> */}
+      <div className="container-fluid px-4 px-md-5">
         <div
           className="row align-items-center"
           style={{

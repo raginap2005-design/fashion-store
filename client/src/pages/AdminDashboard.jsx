@@ -35,7 +35,9 @@ function AdminDashboard() {
         padding: "40px 20px",
       }}
     >
-      <div className="container">
+      {/* <div className="container"> */}
+
+      <div className="container-fluid px-4 px-md-5">
         <div className="text-center mb-5">
           <div style={{ fontSize: 55 }}>👑</div>
 

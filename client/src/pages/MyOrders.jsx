@@ -137,7 +137,8 @@ function MyOrders() {
 
   if (loading) {
     return (
-      <div className="container py-5 text-center">
+      // <div className="container py-5 text-center">
+      <div className="container-fluid px-4 px-md-5 py-5 text-center">
         <div className="spinner-border text-danger" />
         <h5 className="mt-3">Loading your orders...</h5>
       </div>
@@ -149,14 +150,24 @@ function MyOrders() {
   // =========================================
 
   return (
+    // <div
+    //   className="container"
+    //   style={{
+    //     minHeight: "70vh",
+    //     paddingTop: "40px",
+    //     paddingBottom: "60px",
+    //   }}
+    // >
+
+
     <div
-      className="container"
-      style={{
-        minHeight: "70vh",
-        paddingTop: "40px",
-        paddingBottom: "60px",
-      }}
-    >
+  className="container-fluid px-4 px-md-5"
+  style={{
+    minHeight: "70vh",
+    paddingTop: "40px",
+    paddingBottom: "60px",
+  }}
+>
       {/* HEADER */}
 
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
