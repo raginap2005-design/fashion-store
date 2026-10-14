@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -6,6 +7,13 @@ function Products({ category }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // PRODUCT REVIEWS
+  const [reviews, setReviews] = useState({});
+  const [reviewRatings, setReviewRatings] = useState({});
+  const [reviewComments, setReviewComments] = useState({});
+  const [reviewLoading, setReviewLoading] = useState({});
+  const [expandedReviews, setExpandedReviews] = useState({});
 
   // Search and category filter
   const [searchTerm, setSearchTerm] = useState("");
@@ -72,7 +80,6 @@ function Products({ category }) {
 
   const filteredProducts = products.filter((product) => {
     const productCategory = getCategoryName(product);
-
     const search = searchTerm.trim().toLowerCase();
 
     const matchesSearch =
@@ -146,7 +153,6 @@ function Products({ category }) {
       }
 
       localStorage.setItem("cart", JSON.stringify(localCart));
-
       window.dispatchEvent(new Event("cartUpdated"));
 
       toast.success(`${product.name} added to cart!`);
@@ -218,6 +224,109 @@ function Products({ category }) {
   };
 
   // =========================================
+  // FETCH PRODUCT REVIEWS
+  // =========================================
+
+  const fetchReviews = async (productId) => {
+    try {
+      const response = await axios.get(
+        `https://fashion-store-u2cg.onrender.com/api/reviews/${productId}`
+      );
+
+      setReviews((previous) => ({
+        ...previous,
+        [productId]: response.data,
+      }));
+    } catch (error) {
+      console.log("FETCH REVIEWS ERROR:", error);
+    }
+  };
+
+  // Fetch reviews for displayed products
+  useEffect(() => {
+    if (products.length > 0) {
+      products.forEach((product) => {
+        fetchReviews(product._id);
+      });
+    }
+  }, [products]);
+
+  // =========================================
+  // SUBMIT PRODUCT REVIEW
+  // =========================================
+
+  const submitReview = async (productId) => {
+    const token = localStorage.getItem("token");
+    const rating = Number(reviewRatings[productId]);
+    const comment = reviewComments[productId]?.trim();
+
+    if (!token) {
+      toast.error("Please login to submit a review.");
+      return;
+    }
+
+    if (!rating || rating < 1 || rating > 5) {
+      toast.error("Please select a star rating.");
+      return;
+    }
+
+    if (!comment || comment.length < 3) {
+      toast.error("Please enter at least 3 characters.");
+      return;
+    }
+
+    if (comment.length > 1000) {
+      toast.error("Review cannot exceed 1000 characters.");
+      return;
+    }
+
+    try {
+      setReviewLoading((previous) => ({
+        ...previous,
+        [productId]: true,
+      }));
+
+      await axios.post(
+        "https://fashion-store-u2cg.onrender.com/api/reviews",
+        {
+          productId,
+          rating,
+          comment,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      toast.success("Review submitted successfully!");
+
+      setReviewComments((previous) => ({
+        ...previous,
+        [productId]: "",
+      }));
+
+      setReviewRatings((previous) => ({
+        ...previous,
+        [productId]: 0,
+      }));
+
+      await fetchReviews(productId);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to submit review."
+      );
+    } finally {
+      setReviewLoading((previous) => ({
+        ...previous,
+        [productId]: false,
+      }));
+    }
+  };
+
+  // =========================================
   // LOADING
   // =========================================
 
@@ -272,8 +381,6 @@ function Products({ category }) {
         paddingBottom: "60px",
       }}
     >
-      {/* <div className="container"> */}
-
       <div className="container-fluid px-4 px-md-5">
         {/* HEADER */}
 
@@ -464,11 +571,18 @@ function Products({ category }) {
           <div className="row g-4">
             {filteredProducts.map((product) => {
               const imageUrl = product.image
-                ? `https://fashion-store-u2cg.onrender.com/${product.image.replace(
-                    /\\/g,
-                    "/"
-                  ).replace(/^\/+/, "")}`
+                ? `https://fashion-store-u2cg.onrender.com/${product.image
+                    .replace(/\\/g, "/")
+                    .replace(/^\/+/, "")}`
                 : null;
+
+              const productReviewData = reviews[product._id];
+              const productReviews =
+                productReviewData?.reviews || [];
+              const averageRating =
+                productReviewData?.averageRating || 0;
+              const totalReviews =
+                productReviewData?.totalReviews || 0;
 
               return (
                 <div
@@ -588,6 +702,189 @@ function Products({ category }) {
                       >
                         ₹{product.price}
                       </h4>
+
+                      {/* PRODUCT RATING */}
+
+                      <div className="mb-3">
+                        <span
+                          style={{
+                            color: "#f5b301",
+                            fontSize: "18px",
+                          }}
+                        >
+                          {"★".repeat(Math.round(averageRating))}
+                          {"☆".repeat(
+                            5 - Math.round(averageRating)
+                          )}
+                        </span>
+
+                        <span className="text-muted small ms-2">
+                          {totalReviews > 0
+                            ? `${averageRating}/5 (${totalReviews} reviews)`
+                            : "No reviews yet"}
+                        </span>
+                      </div>
+
+                      {/* WRITE A REVIEW */}
+
+                      <div
+                        className="mb-3 p-3"
+                        style={{
+                          background: "#fff5f8",
+                          borderRadius: "12px",
+                        }}
+                      >
+                        <h6 className="fw-bold mb-2">
+                          Write a Review
+                        </h6>
+
+                        <div
+                          className="d-flex gap-1 mb-2"
+                          role="group"
+                          aria-label="Choose rating"
+                        >
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() =>
+                                setReviewRatings((previous) => ({
+                                  ...previous,
+                                  [product._id]: star,
+                                }))
+                              }
+                              aria-label={`${star} star rating`}
+                              style={{
+                                border: "none",
+                                background: "transparent",
+                                padding: "2px",
+                                fontSize: "25px",
+                                cursor: "pointer",
+                                color:
+                                  star <=
+                                  (reviewRatings[product._id] || 0)
+                                    ? "#f5b301"
+                                    : "#c5c5c5",
+                              }}
+                            >
+                              ★
+                            </button>
+                          ))}
+                        </div>
+
+                        <textarea
+                          className="form-control mb-2"
+                          rows="3"
+                          maxLength={1000}
+                          placeholder="Share your experience..."
+                          value={
+                            reviewComments[product._id] || ""
+                          }
+                          onChange={(e) =>
+                            setReviewComments((previous) => ({
+                              ...previous,
+                              [product._id]: e.target.value,
+                            }))
+                          }
+                          style={{
+                            borderRadius: "8px",
+                            fontSize: "13px",
+                          }}
+                        />
+
+                        <button
+                          type="button"
+                          className="btn btn-danger btn-sm w-100"
+                          disabled={!!reviewLoading[product._id]}
+                          onClick={() =>
+                            submitReview(product._id)
+                          }
+                          style={{
+                            borderRadius: "8px",
+                            background: "#d63384",
+                            borderColor: "#d63384",
+                          }}
+                        >
+                          {reviewLoading[product._id]
+                            ? "Submitting..."
+                            : "Submit Review"}
+                        </button>
+                      </div>
+
+                      {/* CUSTOMER REVIEWS */}
+
+                      <div className="mb-3">
+                        <button
+                          type="button"
+                          className="btn btn-link p-0 text-decoration-none fw-semibold"
+                          onClick={() =>
+                            setExpandedReviews((previous) => ({
+                              ...previous,
+                              [product._id]: !previous[product._id],
+                            }))
+                          }
+                          style={{ color: "#d63384" }}
+                        >
+                          {expandedReviews[product._id]
+                            ? "Hide Customer Reviews"
+                            : `View Customer Reviews (${totalReviews})`}
+                        </button>
+
+                        {expandedReviews[product._id] && (
+                          <div
+                            className="mt-2"
+                            style={{
+                              maxHeight: "220px",
+                              overflowY: "auto",
+                            }}
+                          >
+                            {productReviews.length === 0 ? (
+                              <p className="text-muted small mb-0">
+                                No reviews yet. Be the first to review!
+                              </p>
+                            ) : (
+                              productReviews.map((review) => (
+                                <div
+                                  key={review._id}
+                                  className="p-2 mb-2"
+                                  style={{
+                                    background: "#fff5f8",
+                                    borderRadius: "8px",
+                                  }}
+                                >
+                                  <div className="d-flex justify-content-between align-items-center gap-2">
+                                    <strong className="small">
+                                      {review.user?.name || "Customer"}
+                                    </strong>
+
+                                    <span
+                                      className="small"
+                                      style={{ color: "#f5b301" }}
+                                    >
+                                      {"★".repeat(review.rating)}
+                                      {"☆".repeat(5 - review.rating)}
+                                    </span>
+                                  </div>
+
+                                  <p className="small mb-1 mt-1">
+                                    {review.comment}
+                                  </p>
+
+                                  <span className="text-muted" style={{ fontSize: "11px" }}>
+                                    {review.createdAt
+                                      ? new Date(
+                                          review.createdAt
+                                        ).toLocaleDateString()
+                                      : ""}
+                                  </span>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* STOCK */}
 
                       <p className="small mb-3">
                         {product.stock > 0 ? (
