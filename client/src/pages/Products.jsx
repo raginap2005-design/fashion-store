@@ -14,6 +14,7 @@ function Products({ category }) {
   const [reviewComments, setReviewComments] = useState({});
   const [reviewLoading, setReviewLoading] = useState({});
   const [expandedReviews, setExpandedReviews] = useState({});
+  const [userReviewed, setUserReviewed] = useState({});
 
   // Search and category filter
   const [searchTerm, setSearchTerm] = useState("");
@@ -233,16 +234,59 @@ function Products({ category }) {
         `https://fashion-store-u2cg.onrender.com/api/reviews/${productId}`
       );
 
+      const reviewData = response.data;
+      const productReviews = reviewData.reviews || [];
+
       setReviews((previous) => ({
         ...previous,
-        [productId]: response.data,
+        [productId]: reviewData,
+      }));
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setUserReviewed((previous) => ({
+          ...previous,
+          [productId]: false,
+        }));
+        return;
+      }
+
+      // Identify the current user from the login token.
+      // This is only for displaying the correct UI.
+      const tokenPayload = token.split(".")[1];
+
+      const base64 = tokenPayload
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+
+      const paddedBase64 =
+        base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+
+      const currentUser = JSON.parse(atob(paddedBase64));
+      const currentUserId = String(
+        currentUser.id || currentUser._id || ""
+      );
+
+      const alreadyReviewed = productReviews.some((review) => {
+        const reviewUserId =
+          typeof review.user === "object"
+            ? review.user?._id
+            : review.user;
+
+        return String(reviewUserId || "") === currentUserId;
+      });
+
+      setUserReviewed((previous) => ({
+        ...previous,
+        [productId]: alreadyReviewed,
       }));
     } catch (error) {
       console.log("FETCH REVIEWS ERROR:", error);
     }
   };
 
-  // Fetch reviews for displayed products
+  // Fetch reviews for products
   useEffect(() => {
     if (products.length > 0) {
       products.forEach((product) => {
@@ -262,6 +306,11 @@ function Products({ category }) {
 
     if (!token) {
       toast.error("Please login to submit a review.");
+      return;
+    }
+
+    if (userReviewed[productId]) {
+      toast.error("You have already reviewed this product.");
       return;
     }
 
@@ -300,6 +349,12 @@ function Products({ category }) {
         }
       );
 
+      // Hide the form immediately after successful submission.
+      setUserReviewed((previous) => ({
+        ...previous,
+        [productId]: true,
+      }));
+
       toast.success("Review submitted successfully!");
 
       setReviewComments((previous) => ({
@@ -314,10 +369,21 @@ function Products({ category }) {
 
       await fetchReviews(productId);
     } catch (error) {
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to submit review."
-      );
+      const message = error.response?.data?.message;
+
+      if (
+        error.response?.status === 409 ||
+        message === "You have already reviewed this product"
+      ) {
+        setUserReviewed((previous) => ({
+          ...previous,
+          [productId]: true,
+        }));
+
+        toast.error("You have already reviewed this product.");
+      } else {
+        toast.error(message || "Failed to submit review.");
+      }
     } finally {
       setReviewLoading((previous) => ({
         ...previous,
@@ -496,9 +562,7 @@ function Products({ category }) {
             <select
               className="form-select"
               value={selectedCategory}
-              onChange={(e) =>
-                setSelectedCategory(e.target.value)
-              }
+              onChange={(e) => setSelectedCategory(e.target.value)}
               aria-label="Filter by category"
               style={{
                 height: "48px",
@@ -577,12 +641,9 @@ function Products({ category }) {
                 : null;
 
               const productReviewData = reviews[product._id];
-              const productReviews =
-                productReviewData?.reviews || [];
-              const averageRating =
-                productReviewData?.averageRating || 0;
-              const totalReviews =
-                productReviewData?.totalReviews || 0;
+              const productReviews = productReviewData?.reviews || [];
+              const averageRating = productReviewData?.averageRating || 0;
+              const totalReviews = productReviewData?.totalReviews || 0;
 
               return (
                 <div
@@ -713,9 +774,7 @@ function Products({ category }) {
                           }}
                         >
                           {"★".repeat(Math.round(averageRating))}
-                          {"☆".repeat(
-                            5 - Math.round(averageRating)
-                          )}
+                          {"☆".repeat(5 - Math.round(averageRating))}
                         </span>
 
                         <span className="text-muted small ms-2">
@@ -734,81 +793,85 @@ function Products({ category }) {
                           borderRadius: "12px",
                         }}
                       >
-                        <h6 className="fw-bold mb-2">
-                          Write a Review
-                        </h6>
+                        {userReviewed[product._id] ? (
+                          <div className="text-success fw-semibold small">
+                            ✓ You have already reviewed this product.
+                          </div>
+                        ) : (
+                          <>
+                            <h6 className="fw-bold mb-2">
+                              Write a Review
+                            </h6>
 
-                        <div
-                          className="d-flex gap-1 mb-2"
-                          role="group"
-                          aria-label="Choose rating"
-                        >
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              type="button"
-                              onClick={() =>
-                                setReviewRatings((previous) => ({
+                            <div
+                              className="d-flex gap-1 mb-2"
+                              role="group"
+                              aria-label="Choose rating"
+                            >
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={() =>
+                                    setReviewRatings((previous) => ({
+                                      ...previous,
+                                      [product._id]: star,
+                                    }))
+                                  }
+                                  aria-label={`${star} star rating`}
+                                  style={{
+                                    border: "none",
+                                    background: "transparent",
+                                    padding: "2px",
+                                    fontSize: "25px",
+                                    cursor: "pointer",
+                                    color:
+                                      star <=
+                                      (reviewRatings[product._id] || 0)
+                                        ? "#f5b301"
+                                        : "#c5c5c5",
+                                  }}
+                                >
+                                  ★
+                                </button>
+                              ))}
+                            </div>
+
+                            <textarea
+                              className="form-control mb-2"
+                              rows="3"
+                              maxLength={1000}
+                              placeholder="Share your experience..."
+                              value={reviewComments[product._id] || ""}
+                              onChange={(e) =>
+                                setReviewComments((previous) => ({
                                   ...previous,
-                                  [product._id]: star,
+                                  [product._id]: e.target.value,
                                 }))
                               }
-                              aria-label={`${star} star rating`}
                               style={{
-                                border: "none",
-                                background: "transparent",
-                                padding: "2px",
-                                fontSize: "25px",
-                                cursor: "pointer",
-                                color:
-                                  star <=
-                                  (reviewRatings[product._id] || 0)
-                                    ? "#f5b301"
-                                    : "#c5c5c5",
+                                borderRadius: "8px",
+                                fontSize: "13px",
+                              }}
+                            />
+
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm w-100"
+                              disabled={!!reviewLoading[product._id]}
+                              onClick={() => submitReview(product._id)}
+                              style={{
+                                borderRadius: "8px",
+                                background: "#d63384",
+                                borderColor: "#d63384",
                               }}
                             >
-                              ★
+                              {reviewLoading[product._id]
+                                ? "Submitting..."
+                                : "Submit Review"}
                             </button>
-                          ))}
-                        </div>
-
-                        <textarea
-                          className="form-control mb-2"
-                          rows="3"
-                          maxLength={1000}
-                          placeholder="Share your experience..."
-                          value={
-                            reviewComments[product._id] || ""
-                          }
-                          onChange={(e) =>
-                            setReviewComments((previous) => ({
-                              ...previous,
-                              [product._id]: e.target.value,
-                            }))
-                          }
-                          style={{
-                            borderRadius: "8px",
-                            fontSize: "13px",
-                          }}
-                        />
-
-                        <button
-                          type="button"
-                          className="btn btn-danger btn-sm w-100"
-                          disabled={!!reviewLoading[product._id]}
-                          onClick={() =>
-                            submitReview(product._id)
-                          }
-                          style={{
-                            borderRadius: "8px",
-                            background: "#d63384",
-                            borderColor: "#d63384",
-                          }}
-                        >
-                          {reviewLoading[product._id]
-                            ? "Submitting..."
-                            : "Submit Review"}
-                        </button>
+                          </>
+                        )}
                       </div>
 
                       {/* CUSTOMER REVIEWS */}
@@ -870,7 +933,10 @@ function Products({ category }) {
                                     {review.comment}
                                   </p>
 
-                                  <span className="text-muted" style={{ fontSize: "11px" }}>
+                                  <span
+                                    className="text-muted"
+                                    style={{ fontSize: "11px" }}
+                                  >
                                     {review.createdAt
                                       ? new Date(
                                           review.createdAt
