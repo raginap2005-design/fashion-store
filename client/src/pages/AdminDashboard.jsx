@@ -53,10 +53,12 @@ function AdminDashboard() {
           </p>
         </div>
 
-        <h4 className="fw-bold mb-4">
-          Manage Store
-        </h4>
-
+      <h4
+  className="fw-bold mb-4"
+  style={{ color: "#f71083" }}
+>
+  Manage Store
+</h4>
         <div className="row g-4">
           {cards.map((item) => (
             <div

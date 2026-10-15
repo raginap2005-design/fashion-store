@@ -17,6 +17,26 @@ function Products({ category }) {
   const [userReviewed, setUserReviewed] = useState({});
   const [isAdmin, setIsAdmin] = useState(false);
 
+  useEffect(() => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    try {
+      const payload = token.split(".")[1];
+      const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+      const paddedBase64 =
+        base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+
+      const currentUser = JSON.parse(atob(paddedBase64));
+      setIsAdmin(currentUser.role === "admin");
+    } catch {
+      setIsAdmin(false);
+    }
+  } else {
+    setIsAdmin(false);
+  }
+}, []);
+
   // Search and category filter
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -479,27 +499,29 @@ function Products({ category }) {
               </p>
             </div>
 
-            <div>
-              <button
-                className="btn btn-outline-danger me-2"
-                style={{ borderRadius: "10px" }}
-                onClick={() => {
-                  window.location.href = "/wishlist";
-                }}
-              >
-                ❤️ Wishlist
-              </button>
+           {!isAdmin && (
+  <div>
+    <button
+      className="btn btn-outline-danger me-2"
+      style={{ borderRadius: "10px" }}
+      onClick={() => {
+        window.location.href = "/wishlist";
+      }}
+    >
+      ❤️ Wishlist
+    </button>
 
-              <button
-                className="btn btn-dark"
-                style={{ borderRadius: "10px" }}
-                onClick={() => {
-                  window.location.href = "/cart";
-                }}
-              >
-                🛒 View Cart
-              </button>
-            </div>
+    <button
+      className="btn btn-dark"
+      style={{ borderRadius: "10px" }}
+      onClick={() => {
+        window.location.href = "/cart";
+      }}
+    >
+      🛒 View Cart
+    </button>
+  </div>
+)}
           </div>
         </div>
 
@@ -967,21 +989,23 @@ function Products({ category }) {
                         )}
                       </p>
 
-                      {/* ADD TO CART */}
+                      {/* ADD TO CART - Hide for Admin */}
 
-                      <button
-                        className="btn btn-dark w-100 mt-auto fw-semibold"
-                        style={{
-                          borderRadius: "10px",
-                          padding: "10px",
-                        }}
-                        onClick={() => addToCart(product)}
-                        disabled={product.stock <= 0}
-                      >
-                        {product.stock <= 0
-                          ? "Out of Stock"
-                          : "🛒 Add to Cart"}
-                      </button>
+{!isAdmin && (
+  <button
+    className="btn btn-dark w-100 mt-auto fw-semibold"
+    style={{
+      borderRadius: "10px",
+      padding: "10px",
+    }}
+    onClick={() => addToCart(product)}
+    disabled={product.stock <= 0}
+  >
+    {product.stock <= 0
+      ? "Out of Stock"
+      : "🛒 Add to Cart"}
+  </button>
+)}
                     </div>
                   </div>
                 </div>

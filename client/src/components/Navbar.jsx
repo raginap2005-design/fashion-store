@@ -62,44 +62,50 @@ function Navbar() {
             🏠 Home
           </Link>
 
-          {/* PRODUCTS */}
+        {/* PRODUCTS */}
 
-          <Link
-            to="/products"
-            className="btn btn-sm"
-            style={{
-              color: "white",
-              fontWeight: "600",
-            }}
-          >
-            👗 Products
-          </Link>
+{role !== "admin" && (
+  <Link
+    to="/products"
+    className="btn btn-sm"
+    style={{
+      color: "white",
+      fontWeight: "600",
+    }}
+  >
+    👗 Products
+  </Link>
+)}
 
           {/* WISHLIST */}
 
-          <Link
-            to="/wishlist"
-            className="btn btn-sm"
-            style={{
-              color: "white",
-              fontWeight: "600",
-            }}
-          >
-            ❤️ Wishlist
-          </Link>
+{role !== "admin" && (
+  <Link
+    to="/wishlist"
+    className="btn btn-sm"
+    style={{
+      color: "white",
+      fontWeight: "600",
+    }}
+  >
+    ❤️ Wishlist
+  </Link>
+)}
 
-          {/* CART */}
+        {/* CART */}
 
-          <Link
-            to="/cart"
-            className="btn btn-sm"
-            style={{
-              color: "white",
-              fontWeight: "600",
-            }}
-          >
-            🛒 Cart
-          </Link>
+{role !== "admin" && (
+  <Link
+    to="/cart"
+    className="btn btn-sm"
+    style={{
+      color: "white",
+      fontWeight: "600",
+    }}
+  >
+    🛒 Cart
+  </Link>
+)}
 
           {/* USER DASHBOARD */}
 

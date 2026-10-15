@@ -114,17 +114,6 @@ function MyOrders() {
       transports: ["websocket", "polling"],
     });
 
-    socket.on("connect", () => {
-      console.log("MyOrders socket connected");
-    });
-
-    socket.on("orderStatusUpdated", () => {
-      fetchOrders(false);
-    });
-
-    socket.on("connect_error", (err) => {
-      console.error("Socket connection error:", err.message);
-    });
 
     return () => {
       socket.disconnect();

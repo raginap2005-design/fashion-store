@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 
 function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -221,29 +222,40 @@ function AdminProducts() {
     >
       {/* <div className="container"> */}
       <div className="container-fluid px-4 px-md-5">
-        {/* HEADER */}
-        <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-          <div>
-            <h1 className="fw-bold" style={{ color: "#d63384" }}>
-              Admin Products
-            </h1>
-            <p className="text-secondary mb-0">
-              Manage your StyleHub products
-            </p>
-          </div>
+      
+{/* HEADER */}
+<div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <div>
+    <h1 className="fw-bold" style={{ color: "#d63384" }}>
+      Admin Products
+    </h1>
+    <p className="text-secondary mb-0">
+      Manage your StyleHub products
+    </p>
+  </div>
 
-          <button
-            type="button"
-            className="btn btn-lg text-white"
-            style={{
-              backgroundColor: "#d63384",
-              borderRadius: "12px",
-            }}
-            onClick={() => setShowForm((previous) => !previous)}
-          >
-            {showForm ? "✕ Close" : "＋ Add Product"}
-          </button>
-        </div>
+  <div className="d-flex gap-2 flex-wrap">
+    <Link
+      to="/admin"
+      className="btn btn-outline-dark btn-lg"
+    >
+      ← Dashboard
+    </Link>
+
+    <button
+      type="button"
+      className="btn btn-lg text-white"
+      style={{
+        backgroundColor: "#d63384",
+        borderRadius: "12px",
+      }}
+      onClick={() => setShowForm((previous) => !previous)}
+    >
+      {showForm ? "✕ Close" : "＋ Add Product"}
+    </button>
+  </div>
+</div>
+
 
         {/* ADD PRODUCT FORM */}
         {showForm && (
@@ -251,6 +263,8 @@ function AdminProducts() {
             className="card border-0 shadow-lg mb-5"
             style={{ borderRadius: "20px" }}
           >
+
+ 
             <div className="card-body p-4">
               <h3
                 className="fw-bold mb-4"

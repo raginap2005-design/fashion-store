@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+// import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -29,6 +30,9 @@ import { Toaster } from "react-hot-toast";
 // =========================================
 
 function Home() {
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
   return (
     <div
       style={{
@@ -60,27 +64,22 @@ function Home() {
           </Link>
 
           <div className="d-flex gap-2">
-            <Link
-              to="/products"
-              className="btn btn-outline-dark"
-            >
-              Shop
-            </Link>
+  {role !== "admin" && (
+    <>
+      <Link to="/products" className="btn btn-outline-dark">
+        Shop
+      </Link>
 
-            <Link
-              to="/wishlist"
-              className="btn btn-outline-danger"
-            >
-              ❤️
-            </Link>
+      <Link to="/wishlist" className="btn btn-outline-danger">
+        ❤️
+      </Link>
 
-            <Link
-              to="/cart"
-              className="btn btn-warning"
-            >
-              🛒
-            </Link>
-          </div>
+      <Link to="/cart" className="btn btn-warning">
+        🛒
+      </Link>
+    </>
+  )}
+</div>
         </div>
       </nav>
 
@@ -353,33 +352,43 @@ function Home() {
           </p>
 
           <div className="d-flex justify-content-center gap-2 flex-wrap mt-3">
-            <Link
-              to="/login"
-              className="btn btn-dark px-4"
-            >
-              Login
-            </Link>
+           
+{!localStorage.getItem("token") && (
+  <>
+    <Link
+      to="/login"
+      className="btn btn-dark px-4"
+    >
+      Login
+    </Link>
 
-            <Link
-              to="/register"
-              className="btn btn-primary px-4"
-            >
-              Register
-            </Link>
+    <Link
+      to="/register"
+      className="btn btn-primary px-4"
+    >
+      Register
+    </Link>
+  </>
+)}
 
-            <Link
-              to="/my-orders"
-              className="btn btn-outline-dark px-4"
-            >
-              📦 My Orders
-            </Link>
+{localStorage.getItem("token") &&
+  localStorage.getItem("role") !== "admin" && (
+    <Link
+      to="/my-orders"
+      className="btn btn-outline-dark px-4"
+    >
+      📦 My Orders
+    </Link>
+)}
 
-            <Link
-              to="/wishlist"
-              className="btn btn-outline-danger px-4"
-            >
-              ❤️ Wishlist
-            </Link>
+           {role !== "admin" && (
+  <Link
+    to="/wishlist"
+    className="btn btn-outline-danger px-4"
+  >
+    ❤️ Wishlist
+  </Link>
+)}
           </div>
         </div>
       </div>
