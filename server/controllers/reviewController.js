@@ -6,7 +6,18 @@ const Product = require("../models/productModel");
 const createReview = async (req, res) => {
   try {
     const { productId, rating, comment } = req.body;
-    const userId = req.user.id;
+   
+
+    
+const userId = req.user.id;
+
+// Prevent admin from submitting product reviews
+if (req.user.role === "admin") {
+  return res.status(403).json({
+    message: "Admins cannot submit product reviews",
+  });
+}
+
 
     if (!productId || !rating || !comment?.trim()) {
       return res.status(400).json({

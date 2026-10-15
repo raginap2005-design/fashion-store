@@ -15,6 +15,7 @@ function Products({ category }) {
   const [reviewLoading, setReviewLoading] = useState({});
   const [expandedReviews, setExpandedReviews] = useState({});
   const [userReviewed, setUserReviewed] = useState({});
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Search and category filter
   const [searchTerm, setSearchTerm] = useState("");
@@ -264,6 +265,7 @@ function Products({ category }) {
         base64 + "=".repeat((4 - (base64.length % 4)) % 4);
 
       const currentUser = JSON.parse(atob(paddedBase64));
+      setIsAdmin(currentUser.role === "admin");
       const currentUserId = String(
         currentUser.id || currentUser._id || ""
       );
@@ -793,7 +795,8 @@ function Products({ category }) {
                           borderRadius: "12px",
                         }}
                       >
-                        {userReviewed[product._id] ? (
+                        {/* {userReviewed[product._id] ? ( */}
+                        {isAdmin ? null : userReviewed[product._id] ? (
                           <div className="text-success fw-semibold small">
                             ✓ You have already reviewed this product.
                           </div>
