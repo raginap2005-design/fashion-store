@@ -108,3 +108,31 @@ code {
     font-size: 20px;
   }
 }
+
+/* Mobile Responsive */
+@media screen and (max-width: 768px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  h1 {
+    font-size: 28px;
+    letter-spacing: -0.5px;
+  }
+
+  h2 {
+    font-size: 21px;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}

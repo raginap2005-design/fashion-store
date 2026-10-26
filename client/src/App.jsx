@@ -44,45 +44,63 @@ function Home() {
       {/* NAVBAR */}
 
       <nav
-        className="navbar navbar-expand-lg"
+  className="navbar navbar-expand-lg"
+  style={{
+    background: "linear-gradient(90deg, #ffffff 0%, #fff0f7 60%, #ffe0f0 100%)",
+    boxShadow: "0 3px 15px rgba(214, 51, 132, 0.12)",
+    borderBottom: "1px solid #fce7f3",
+  }}
+>
+  <div className="container-fluid px-4 px-md-5">
+    <Link
+      to="/"
+      className="navbar-brand fw-bold"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        textDecoration: "none",
+      }}
+    >
+      <img
+        src="/images/stylehub-logo.png"
+        alt="StyleHub"
         style={{
-          backgroundColor: "#ffffff",
-          boxShadow: "0 3px 15px rgba(0,0,0,0.08)",
+          width: "150px",
+          height: "55px",
+          objectFit: "contain",
+          display: "block",
         }}
-      >
-        {/* <div className="container"> */}
-        <div className="container-fluid px-4 px-md-5">
+      />
+    </Link>
+
+    <div className="d-flex gap-2">
+      {role !== "admin" && (
+        <>
           <Link
-            to="/"
-            className="navbar-brand fw-bold"
-            style={{
-              color: "#d63384",
-              fontSize: "28px",
-            }}
+            to="/products"
+            className="btn btn-outline-dark"
           >
-            ✨ StyleHub
+            Shop
           </Link>
 
-          <div className="d-flex gap-2">
-  {role !== "admin" && (
-    <>
-      <Link to="/products" className="btn btn-outline-dark">
-        Shop
-      </Link>
+          <Link
+            to="/wishlist"
+            className="btn btn-outline-danger"
+          >
+            ❤️
+          </Link>
 
-      <Link to="/wishlist" className="btn btn-outline-danger">
-        ❤️
-      </Link>
-
-      <Link to="/cart" className="btn btn-warning">
-        🛒
-      </Link>
-    </>
-  )}
-</div>
-        </div>
-      </nav>
-
+          <Link
+            to="/cart"
+            className="btn btn-warning"
+          >
+            🛒
+          </Link>
+        </>
+      )}
+    </div>
+  </div>
+</nav>
       {/* HERO SECTION */}
 
       {/* <div className="container"> */}

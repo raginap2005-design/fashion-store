@@ -182,3 +182,43 @@
     border-right-color: var(--border);
   }
 }
+
+
+/* Mobile Responsive */
+@media screen and (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  #center {
+    padding: 24px 16px;
+    gap: 16px;
+  }
+
+  #next-steps > div {
+    padding: 20px 16px;
+  }
+
+  #next-steps ul {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  #next-steps ul li {
+    max-width: 100%;
+  }
+
+  #docs {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #spacer {
+    height: 32px;
+  }
+}

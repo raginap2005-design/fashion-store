@@ -169,13 +169,7 @@ function MyOrders() {
         </div>
 
         <div className="d-flex gap-2 flex-wrap">
-          <button
-            className="btn btn-outline-secondary"
-            onClick={() => fetchOrders()}
-            disabled={loading}
-          >
-            ↻ Refresh
-          </button>
+          
 
           <button
             className="btn btn-dark"
